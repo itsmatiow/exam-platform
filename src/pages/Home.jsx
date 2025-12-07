@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
-
+  //https://exam-platform-gold.vercel.app/
   return (
     <div className="flex h-screen flex-col justify-between">
       <div className="flex h-200 flex-col items-center justify-center">

@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../ui/Button";
 
@@ -27,6 +28,8 @@ export default function Test() {
   const [curQIndex, setCurQIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(null);
+
+  const { user } = useAuth(); // گرفتن اطلاعات کاربر
 
   const navigate = useNavigate();
 
@@ -148,6 +151,7 @@ export default function Test() {
       }
       return {
         test_id: id,
+        eitaa_id: user.eitaa_id,
         question_id: q.id,
         user_answer: userAnsNum || null,
       };
@@ -160,6 +164,7 @@ export default function Test() {
       // Save Result
       const { error: resultError } = await supabase.from("results").insert({
         test_id: id,
+        eitaa_id: user.eitaa_id,
         total_questions: totalQuestions,
         correct_answers: correctCount,
         score_percentage: percentage,

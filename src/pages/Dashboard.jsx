@@ -1,12 +1,174 @@
-import React, { Activity, useEffect, useState } from "react";
+// import React, { Activity, useEffect, useState } from "react";
+// import Button from "../ui/Button";
+// import { supabase } from "../supabase";
+
+// export default function Dashboard() {
+//   const [activeTab, setActiveTab] = useState("created");
+//   const [tests, setTests] = useState([]);
+//   const [loading, setLoading] = useState(false);
+
+//   const fetchCreatedTests = async () => {
+//     setLoading(true);
+//     try {
+//       const { data, error } = await supabase
+//         .from("tests")
+//         .select("*")
+//         .order("created_at", { ascending: false });
+//       if (error) throw error;
+//       setTests(data);
+//     } catch (error) {
+//       console.error("error fetcxhing crated tests:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+//   const fetchTakenTests = async () => {
+//     setLoading(true);
+//     const allKey = Object.keys(localStorage);
+//     const submittedIds = allKey
+//       .filter((key) => key.startsWith("test_submitted_"))
+//       .map((key) => key.replace("test_submitted_", ""));
+
+//     if (submittedIds.length === 0) {
+//       setTests([]);
+//       setLoading(false);
+//       return;
+//     }
+
+//     try {
+//       const { data, error } = await supabase
+//         .from("tests")
+//         .select("*")
+//         .in("id", submittedIds)
+//         .order("created_at", { ascending: false });
+//       if (error) throw error;
+//       setTests(data);
+//     } catch (error) {
+//       console.error("fetching taken test:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//     console.log("fetching taken tests...");
+//     setLoading(false);
+//     // localStorage.getItem();
+//   };
+
+//   useEffect(() => {
+//     setTests([]);
+//     if (activeTab === "created") fetchCreatedTests();
+//     else {
+//       fetchTakenTests();
+//     }
+//   }, [activeTab]);
+
+//   return (
+//     <div className="p-4 pb-8">
+//       <div className="m-4 flex items-center justify-around rounded-2xl bg-cyan-700 p-4 shadow-inner">
+//         <Button
+//           handleClick={() => {
+//             setActiveTab("created");
+//           }}
+//           className={`w-70 py-4 ${
+//             activeTab === "created"
+//               ? " !bg-white !text-xl !font-extrabold !text-black"
+//               : ""
+//           }`}
+//         >
+//           آزمون‌های ساخته شده
+//         </Button>
+//         <Button
+//           handleClick={() => {
+//             setActiveTab("taken");
+//           }}
+//           className={`w-70 py-4 ${
+//             activeTab === "taken"
+//               ? " !bg-white !text-xl !font-extrabold !text-black"
+//               : " !bg-cyan-700 "
+//           }`}
+//         >
+//           آزمون‌های داده شده
+//         </Button>
+//       </div>
+//       {loading ? (
+//         <div className="mt-8 text-center text-2xl font-extrabold">
+//           درحال دریافت اطلاعات...
+//         </div>
+//       ) : tests.length === 0 ? (
+//         <div className="mt-8 text-center text-2xl font-extrabold">
+//           موردی یافت نشد.
+//         </div>
+//       ) : (
+//         <div>
+//           <h1 className="mt-8 text-center text-2xl font-extrabold">
+//             شما آزمون‌های زیر را
+//             {activeTab === "created" ? " ساخته‌اید:" : " داده‌اید:"}
+//           </h1>
+//           <div className="m-8 flex flex-col items-center gap-3 rounded-2xl bg-gray-200/70 p-8 shadow-inner">
+//             <div className="mb-2 flex w-full items-center gap-4 px-2 text-xl font-semibold">
+//               <h1 className="flex-1 text-right">عنوان</h1>
+//               <h1 className="w-32 text-center">تاریخ ساخت</h1>
+//               {activeTab === "created" ? (
+//                 <h1 className="w-28">لینک آزمون</h1>
+//               ) : (
+//                 <h1 className="w-28"> مشاهده نمره</h1>
+//               )}
+//             </div>
+//             {/* <div className="my-4 h-1 w-full rounded-full bg-gray-700/50"></div> */}
+//             {tests.map((test) => (
+//               <div
+//                 key={test.id}
+//                 className="flex w-full items-center gap-4 rounded-xl bg-white p-4 text-lg shadow-sm"
+//               >
+//                 <h2 className="flex-1 truncate text-right font-semibold">
+//                   {test.title}
+//                 </h2>
+//                 <p className="w-28 text-center font-light text-gray-600">
+//                   {new Date(test.created_at).toLocaleDateString("fa-IR")}
+//                 </p>
+//                 {/* بخش دکمه‌ها */}
+//                 <div className="flex w-28 justify-center">
+//                   {activeTab === "created" ? (
+//                     <Button
+//                       className="w-full !py-2 text-base !font-bold"
+//                       handleClick={() => {
+//                         const link = `${window.location.origin}/test/${test.id}`;
+//                         navigator.clipboard.writeText(link);
+//                         alert("لینک آزمون کپی شد!");
+//                       }}
+//                     >
+//                       کپی لینک
+//                     </Button>
+//                   ) : (
+//                     <Button
+//                       className="w-full !py-2 text-base !font-bold"
+//                       handleClick={() =>
+//                         (window.location.href = `/result/${test.id}`)
+//                       }
+//                     >
+//                       مشاهده
+//                     </Button>
+//                   )}
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+import React, { useEffect, useState } from "react";
 import Button from "../ui/Button";
 import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext"; // 👈 اضافه شد
 
 export default function Dashboard() {
+  const { user } = useAuth(); // 👈 گرفتن آیدی کاربر لاگین شده
   const [activeTab, setActiveTab] = useState("created");
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // --- 1. دریافت آزمون‌های ساخته شده (همه آزمون‌ها) ---
   const fetchCreatedTests = async () => {
     setLoading(true);
     try {
@@ -17,57 +179,62 @@ export default function Dashboard() {
       if (error) throw error;
       setTests(data);
     } catch (error) {
-      console.error("error fetcxhing crated tests:", error);
+      console.error("Error fetching created tests:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // --- 2. دریافت آزمون‌های داده شده (نمرات من) ---
   const fetchTakenTests = async () => {
+    // اگر کاربر لاگین نیست یا آیدی ندارد، کاری نکن
+    if (!user?.eitaa_id) return;
+
     setLoading(true);
-    const allKey = Object.keys(localStorage);
-    const submittedIds = allKey
-      .filter((key) => key.startsWith("test_submitted_"))
-      .map((key) => key.replace("test_submitted_", ""));
-
-    if (submittedIds.length === 0) {
-      setTests([]);
-      setLoading(false);
-      return;
-    }
-
     try {
+      // دریافت نتایج از جدول results (فقط مال خودم) + اطلاعات آزمون مربوطه
       const { data, error } = await supabase
-        .from("tests")
-        .select("*")
-        .in("id", submittedIds)
+        .from("results")
+        .select(
+          `
+          *,
+          tests (*)
+        `,
+        )
+        .eq("eitaa_id", user.eitaa_id) // فیلتر روی آیدی من
         .order("created_at", { ascending: false });
+
       if (error) throw error;
-      setTests(data);
+
+      // فرمت‌دهی دیتا برای اینکه مثل آرایه tests معمولی بشه
+      const formattedData = data.map((item) => ({
+        id: item.tests.id, // آیدی آزمون (برای لینک)
+        title: item.tests.title,
+        created_at: item.created_at, // تاریخ امتحان دادن
+        resultId: item.id, // آیدی نتیجه
+        score: item.score_percentage, // نمره
+      }));
+
+      setTests(formattedData);
     } catch (error) {
-      console.error("fetching taken test:", error);
+      console.error("Error fetching taken tests:", error);
     } finally {
       setLoading(false);
     }
-    console.log("fetching taken tests...");
-    setLoading(false);
-    // localStorage.getItem();
   };
 
   useEffect(() => {
     setTests([]);
     if (activeTab === "created") fetchCreatedTests();
-    else {
-      fetchTakenTests();
-    }
-  }, [activeTab]);
+    else fetchTakenTests();
+  }, [activeTab, user]);
 
   return (
-    <div className="p-4 pb-8">
+    <div className="min-h-screen bg-gray-50 p-4 pb-8">
+      {/* --- Tab Buttons --- */}
       <div className="m-4 flex items-center justify-around rounded-2xl bg-cyan-700 p-4 shadow-inner">
         <Button
-          handleClick={() => {
-            setActiveTab("created");
-          }}
+          handleClick={() => setActiveTab("created")}
           className={`w-70 py-4 ${
             activeTab === "created"
               ? " !bg-white !text-xl !font-extrabold !text-black"
@@ -77,9 +244,7 @@ export default function Dashboard() {
           آزمون‌های ساخته شده
         </Button>
         <Button
-          handleClick={() => {
-            setActiveTab("taken");
-          }}
+          handleClick={() => setActiveTab("taken")}
           className={`w-70 py-4 ${
             activeTab === "taken"
               ? " !bg-white !text-xl !font-extrabold !text-black"
@@ -89,43 +254,58 @@ export default function Dashboard() {
           آزمون‌های داده شده
         </Button>
       </div>
+
+      {/* --- Content --- */}
       {loading ? (
-        <div className="mt-8 text-center text-2xl font-extrabold">
+        <div className="mt-8 text-center text-2xl font-extrabold text-gray-500">
           درحال دریافت اطلاعات...
         </div>
       ) : tests.length === 0 ? (
-        <div className="mt-8 text-center text-2xl font-extrabold">
+        <div className="mt-8 text-center text-2xl font-extrabold text-gray-400">
           موردی یافت نشد.
         </div>
       ) : (
         <div>
-          <h1 className="mt-8 text-center text-2xl font-extrabold">
+          <h1 className="mt-8 text-center text-2xl font-extrabold text-cyan-900">
             شما آزمون‌های زیر را
             {activeTab === "created" ? " ساخته‌اید:" : " داده‌اید:"}
           </h1>
+
           <div className="m-8 flex flex-col items-center gap-3 rounded-2xl bg-gray-200/70 p-8 shadow-inner">
-            <div className="mb-2 flex w-full items-center gap-4 px-2 text-xl font-semibold">
+            {/* --- Header Row --- */}
+            <div className="mb-2 flex w-full items-center gap-4 px-4 text-xl font-semibold text-gray-700">
               <h1 className="flex-1 text-right">عنوان</h1>
-              <h1 className="w-32 text-center">تاریخ ساخت</h1>
+              <h1 className="w-32 text-center">تاریخ</h1>
               {activeTab === "created" ? (
-                <h1 className="w-28">لینک آزمون</h1>
+                <h1 className="w-28 text-center">لینک آزمون</h1>
               ) : (
-                <h1 className="w-28"> مشاهده نمره</h1>
+                <h1 className="w-28 text-center">مشاهده نمره</h1>
               )}
             </div>
-            {/* <div className="my-4 h-1 w-full rounded-full bg-gray-700/50"></div> */}
+
+            {/* --- List Items --- */}
             {tests.map((test) => (
               <div
-                key={test.id}
-                className="flex w-full items-center gap-4 rounded-xl bg-white p-4 text-lg shadow-sm"
+                key={test.id || test.resultId}
+                className="flex w-full items-center gap-4 rounded-xl bg-white p-4 text-lg shadow-sm transition hover:shadow-md"
               >
-                <h2 className="flex-1 truncate text-right font-semibold">
+                {/* 1. Title + Score Badge */}
+                <h2 className="flex-1 truncate text-right font-semibold text-gray-800">
                   {test.title}
+                  {/* اگر تب نمرات است، نمره را هم نمایش بده */}
+                  {activeTab === "taken" && (
+                    <span className="mr-3 rounded-md bg-green-100 px-2 py-1 text-sm text-green-700">
+                      ٪{Math.round(test.score)}
+                    </span>
+                  )}
                 </h2>
-                <p className="w-28 text-center font-light text-gray-600">
+
+                {/* 2. Date */}
+                <p className="w-28 text-center text-base font-light text-gray-600">
                   {new Date(test.created_at).toLocaleDateString("fa-IR")}
                 </p>
-                {/* بخش دکمه‌ها */}
+
+                {/* 3. Button */}
                 <div className="flex w-28 justify-center">
                   {activeTab === "created" ? (
                     <Button
@@ -140,9 +320,10 @@ export default function Dashboard() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full !py-2 text-base !font-bold"
+                      className="w-full bg-cyan-50 !px-4 !py-2 text-xs text-cyan-700 hover:bg-cyan-100"
+                      // 👈 لینک اصلاح شده برای رفتن به صفحه نتیجه
                       handleClick={() =>
-                        (window.location.href = `/test/${test.id}`)
+                        (window.location.href = `/result/${test.id}`)
                       }
                     >
                       مشاهده
