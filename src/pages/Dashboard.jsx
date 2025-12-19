@@ -157,6 +157,8 @@
 //     </div>
 //   );
 // }
+
+// ------------------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import Button from "../ui/Button";
 import { supabase } from "../supabase";
@@ -164,7 +166,10 @@ import { useAuth } from "../context/AuthContext"; // 👈 اضافه شد
 
 export default function Dashboard() {
   const { user } = useAuth(); // 👈 گرفتن آیدی کاربر لاگین شده
-  const [activeTab, setActiveTab] = useState("created");
+  // const [activeTab, setActiveTab] = useState("created");
+  const [activeTab, setActiveTab] = useState(
+    user?.role === "admin" ? "created" : "taken",
+  );
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -232,7 +237,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-8">
       {/* --- Tab Buttons --- */}
-      <div className="m-4 flex items-center justify-around rounded-2xl bg-cyan-700 p-4 shadow-inner">
+      {/* <div className="m-4 flex items-center justify-around rounded-2xl bg-cyan-700 p-4 shadow-inner">
         <Button
           handleClick={() => setActiveTab("created")}
           className={`w-70 py-4 ${
@@ -253,7 +258,39 @@ export default function Dashboard() {
         >
           آزمون‌های داده شده
         </Button>
+      </div> */}
+
+      <div className="m-4 flex items-center justify-around rounded-2xl bg-cyan-700 p-4 shadow-inner">
+        {/* 🔒 فقط اگر ادمین بود این تب رو نشون بده */}
+        {user?.role === "admin" && (
+          <Button
+            handleClick={() => setActiveTab("created")}
+            className={`w-70 py-4 ${activeTab === "created" ? " !bg-white !text-black" : ""}`}
+          >
+            آزمون‌های ساخته شده
+          </Button>
+        )}
+
+        <Button
+          handleClick={() => setActiveTab("taken")}
+          className={`w-70 py-4 ${activeTab === "taken" ? " !bg-white !text-black" : " !bg-cyan-700 "}`}
+        >
+          آزمون‌های داده شده
+        </Button>
       </div>
+
+      {/* --- دکمه شناور ساخت آزمون (Floating Action Button) --- */}
+      {/* این دکمه رو فقط برای ادمین بذار */}
+      {user?.role === "admin" && activeTab === "created" && (
+        <div className="fixed bottom-6 left-6 z-50">
+          <Button
+            handleClick={() => (window.location.href = "/create")}
+            className="flex h-14 w-14 items-center justify-center !rounded-full bg-cyan-600 !p-0 text-2xl shadow-xl"
+          >
+            +
+          </Button>
+        </div>
+      )}
 
       {/* --- Content --- */}
       {loading ? (
