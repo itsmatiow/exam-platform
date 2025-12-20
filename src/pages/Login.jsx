@@ -24,7 +24,7 @@ export default function Login() {
     setPhoneSaving(true);
     try {
       console.log("دیتای خام دریافتی:", rawContactData);
-
+      let parsedData = rawContactData;
       let phone = "";
 
       // 1. استخراج شماره از انواع فرمت‌های احتمالی ایتا
@@ -41,22 +41,39 @@ export default function Login() {
         phone =
           rawContactData.phone_number || rawContactData.contact?.phone_number;
       }
+      // 2. 🎯 استخراج دقیق شماره (طبق عکس)
+      // مسیر: responseUnsafe -> contact -> phone
+      if (parsedData?.responseUnsafe?.contact?.phone) {
+        phone = parsedData.responseUnsafe.contact.phone;
+      }
+      // مسیرهای جایگزین (محض احتیاط برای نسخه‌های دیگر)
+      else if (parsedData?.phone_number) {
+        phone = parsedData.phone_number;
+      } else if (parsedData?.contact?.phone) {
+        phone = parsedData.contact.phone;
+      }
 
       if (!phone) {
-        alert("فرمت شماره دریافتی نامعتبر است. لطفا لاگ را چک کنید.");
-        alert("Raw: " + JSON.stringify(rawContactData));
+        alert("متاسفانه فرمت شماره خوانده نشد.");
+        // نمایش دیتای خام برای دیباگ نهایی (اگر باز هم نشد)
+        console.log(JSON.stringify(parsedData));
         setPhoneSaving(false);
         return;
       }
 
-      // 2. تمیزکاری شماره (حذف +98 و ...)
-      // تبدیل به انگلیسی
-      phone = toEng(phone);
-      if (phone.startsWith("98")) phone = "0" + phone.slice(2);
-      if (phone.startsWith("+98")) phone = "0" + phone.slice(3);
-      if (!phone.startsWith("0")) phone = "0" + phone;
+      // 3. تمیزکاری شماره (طبق عکس شماره با 98 شروع میشه)
+      phone = toEng(phone.toString()); // تبدیل اعداد فارسی احتمالی
 
-      // 3. آپدیت دیتابیس
+      // حذف 98 اول (مثل عکسی که فرستادی: 98993...)
+      if (phone.startsWith("98")) {
+        phone = "0" + phone.slice(2); // میشه 0993...
+      } else if (phone.startsWith("+98")) {
+        phone = "0" + phone.slice(3);
+      } else if (!phone.startsWith("0")) {
+        phone = "0" + phone;
+      }
+
+      // 4. آپدیت دیتابیس
       const { data, error } = await supabase
         .from("profiles")
         .update({ phone_number: phone })
@@ -66,12 +83,13 @@ export default function Login() {
 
       if (error) throw error;
 
-      // 4. 🎉 موفقیت! آپدیت کانتکست (این خط باعث میشه صفحه عوض شه)
-      alert("✅ شماره شما با موفقیت ثبت شد!");
-      setUser(data);
+      // 5. موفقیت!
+      // اون الرت طولانی قبلی رو دیگه برداشتم که کاربر اذیت نشه
+      alert("✅ شماره شما با موفقیت تایید شد: " + phone);
+      setUser(data); // این باعث میشه صفحه خودکار بره مرحله بعد
     } catch (err) {
       console.error(err);
-      alert("خطا در ذخیره شماره: " + err.message);
+      alert("خطا در ذخیره: " + err.message);
     } finally {
       setPhoneSaving(false);
     }
