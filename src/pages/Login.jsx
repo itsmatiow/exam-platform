@@ -300,11 +300,17 @@ export default function Login() {
   const requestPhoneFromEitaa = () => {
     // چک میکنیم شیء ایتا هست یا نه
     // const app = window.eitaa || window.Eitaa || window.Eitaa?.WebApp;
-    const app =
-      window.eitaa ||
-      window.Eitaa ||
-      window.EitaaWebApp ||
-      window.Telegram?.WebApp;
+    // const app =
+    //   window.eitaa ||
+    //   window.Eitaa ||
+    //   window.EitaaWebApp ||
+    //   window.Telegram?.webapp ||
+    //   window.Telegram?.WebApp;
+    const root = window.eitaa || window.Eitaa;
+
+    // 2. وارد شدن به پوشه webapp (طبق چیزی که در دیباگ پیدا کردیم)
+    // اگر root نبود، برو سراغ تلگرام (به عنوان پشتیبان)
+    const app = root?.webapp || window.Telegram?.WebApp;
 
     // if (app && app.requestContact) {
     //   app.requestContact(async (isShared, dataString) => {
