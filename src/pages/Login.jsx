@@ -1,446 +1,119 @@
-// import React, { useState, useEffect } from "react";
-// import { useAuth } from "../context/AuthContext";
-// import { supabase } from "../supabase";
-// import Button from "../ui/Button";
-
-// export default function Login() {
-//   const { user, setUser, loading: authLoading } = useAuth();
-//   const [studentId, setStudentId] = useState("");
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   // اگر کانتکست هنوز داره لود میشه، صبر کن
-//   if (authLoading)
-//     return <div className="p-10 text-center">درحال بررسی هویت...</div>;
-
-//   // --- سناریوی ۱: کاربر اصلاً شماره‌اش ثبت نشده (قفل کامل) ---
-//   // یعنی ربات هنوز شماره رو نگرفته یا کاربر دکمه رو نزده
-//   if (!user || !user.phone_number) {
-//     return (
-//       <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6 text-center">
-//         <div className="w-full max-w-sm rounded-2xl border-t-4 border-red-500 bg-white p-8 shadow-lg">
-//           <div className="mb-4 flex justify-center">
-//             <span className="text-4xl">🚫</span>
-//           </div>
-//           <h1 className="text-xl font-black text-gray-800">
-//             احراز هویت انجام نشده!
-//           </h1>
-//           <p className="mt-4 text-sm leading-relaxed text-gray-600">
-//             ما هنوز شماره تماس شما را نداریم. برای امنیت آزمون، باید شماره شما
-//             توسط ایتا تایید شود.
-//           </p>
-
-//           <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-xs text-yellow-800">
-//             <p className="mb-1 font-bold">راه حل:</p>
-//             ۱. به ربات برگردید.
-//             <br />
-//             ۲. دکمه <b>«ارسال شماره تماس»</b> را بزنید.
-//             <br />
-//             ۳. مجدداً وارد این صفحه شوید.
-//           </div>
-
-//           <Button
-//             className="mt-6 w-full bg-gray-600 hover:bg-gray-700"
-//             handleClick={() => window.eitaa?.close()} // بستن مینی‌اپ
-//           >
-//             بازگشت به ربات
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // --- سناریوی ۲: شماره هست، ولی شماره دانشجویی نیست (تکمیل ثبت‌نام) ---
-//   const handleRegister = async () => {
-//     if (!studentId.trim()) {
-//       alert("وارد کردن شماره دانشجویی الزامی است.");
-//       return;
-//     }
-
-//     setIsSubmitting(true);
-
-//     // آپدیت کردن ردیفی که ربات قبلاً ساخته
-//     // ما فقط student_id رو اضافه می‌کنیم، چون phone_number و eitaa_id قبلاً هستن
-//     const { data, error } = await supabase
-//       .from("profiles")
-//       .update({
-//         student_id: studentId,
-//         first_name:
-//           window.eitaa?.initDataUnsafe?.user?.first_name || "کاربر ایتا",
-//       })
-//       .eq("eitaa_id", user.eitaa_id)
-//       .select()
-//       .single();
-
-//     if (error) {
-//       console.error(error);
-//       if (error.code === "23505") {
-//         // کد ارور تکراری بودن unique
-//         alert("این شماره دانشجویی قبلاً ثبت شده است!");
-//       } else {
-//         alert("خطا در ثبت اطلاعات. لطفاً دوباره تلاش کنید.");
-//       }
-//     } else {
-//       // موفقیت: کانتکست رو آپدیت کن تا گارد اجازه عبور بده
-//       setUser(data);
-//       // نیازی به navigate نیست، خود ProtectedRoute میفهمه و ریدایرکت میکنه
-//     }
-//     setIsSubmitting(false);
-//   };
-
-//   return (
-//     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
-//       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
-//         <h1 className="mb-6 text-center text-2xl font-black text-cyan-800">
-//           تکمیل مشخصات
-//         </h1>
-
-//         {/* نمایش شماره موبایل (فقط خواندنی - جهت اطمینان کاربر) */}
-//         <div className="mb-4">
-//           <label className="mb-1 block text-xs font-bold text-gray-500">
-//             شماره موبایل تایید شده:
-//           </label>
-//           <div className="w-full rounded-xl border border-green-200 bg-green-50 p-3 text-center font-mono font-bold tracking-widest text-green-700">
-//             {user.phone_number} ✅
-//           </div>
-//         </div>
-
-//         <div className="mb-6">
-//           <label className="mb-1 block text-sm font-bold text-gray-700">
-//             شماره دانشجویی:
-//           </label>
-//           <input
-//             type="number"
-//             inputMode="numeric"
-//             value={studentId}
-//             onChange={(e) => setStudentId(e.target.value)}
-//             placeholder="مثلا 99123456"
-//             className="w-full rounded-xl border border-gray-300 p-3 text-center text-lg tracking-widest transition-all outline-none focus:border-cyan-600"
-//           />
-//         </div>
-
-//         <Button handleClick={handleRegister} className="w-full">
-//           {isSubmitting ? "درحال ثبت..." : "تایید و ورود به سامانه"}
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
-// --------------------------------------------------------------------------------------
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom"; // 👈 اضافه شد
-// import { useAuth } from "../context/AuthContext";
-// import { supabase } from "../supabase";
-// import Button from "../ui/Button";
-
-// // تابع تبدیل اعداد فارسی به انگلیسی
-// const toEng = (str) => {
-//   return str
-//     .toString()
-//     .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
-//     .replace(/[^0-9]/g, ""); // حذف حروف غیر عددی
-// };
-
-// export default function Login() {
-//   const { user, setUser, loading: authLoading } = useAuth();
-//   const navigate = useNavigate(); // 👈 هوک نویگیت
-
-//   const [studentId, setStudentId] = useState("");
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   // اگر هنوز داره لود میشه
-//   if (authLoading)
-//     return <div className="p-10 text-center">درحال بررسی هویت...</div>;
-
-//   // ⛔️ سناریوی ۱: کاربر هنوز در ربات شماره نداده (قفل امنیتی)
-//   if (!user || !user.phone_number) {
-//     return (
-//       <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6 text-center">
-//         <div className="w-full max-w-sm rounded-2xl border-t-4 border-red-500 bg-white p-8 shadow-lg">
-//           <div className="mb-4 flex justify-center">
-//             <span className="text-4xl">🚫</span>
-//           </div>
-//           <h1 className="text-xl font-black text-gray-800">
-//             احراز هویت انجام نشده!
-//           </h1>
-//           <p className="mt-4 text-sm leading-relaxed text-gray-600">
-//             ما هنوز شماره تماس شما را نداریم. برای امنیت آزمون، باید شماره شما
-//             توسط ایتا تایید شود.
-//           </p>
-
-//           <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-xs text-yellow-800">
-//             <p className="mb-1 font-bold">راه حل:</p>
-//             ۱. به ربات برگردید.
-//             <br />
-//             ۲. دکمه <b>«ارسال شماره تماس»</b> را بزنید.
-//             <br />
-//             ۳. مجدداً وارد این صفحه شوید.
-//           </div>
-
-//           <Button
-//             className="mt-6 w-full bg-gray-600 hover:bg-gray-700"
-//             // توجه: ایتا معمولاً Window.Eitaa دارد (با حرف بزرگ E در برخی نسخه‌ها)
-//             // اما window.eitaa که خودت نوشتی هم در نسخه وب کار میکند
-//             handleClick={() => {
-//               if (window.Eitaa) window.Eitaa.WebApp.close();
-//               else if (window.eitaa) window.eitaa.close();
-//               else window.close();
-//             }}
-//           >
-//             بازگشت به ربات
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // ✅ سناریوی ۲: شماره هست، دریافت شماره دانشجویی
-//   const handleRegister = async () => {
-//     if (!studentId.trim()) {
-//       alert("وارد کردن شماره دانشجویی الزامی است.");
-//       return;
-//     }
-
-//     setIsSubmitting(true);
-
-//     const { data, error } = await supabase
-//       .from("profiles")
-//       .update({
-//         student_id: studentId, // شماره دانشجویی انگلیسی شده
-//         // گرفتن نام از ایتا (اگر موجود باشه)
-//         first_name:
-//           window.eitaa?.initDataUnsafe?.user?.first_name ||
-//           window.Eitaa?.WebApp?.initDataUnsafe?.user?.first_name ||
-//           "کاربر ایتا",
-//       })
-//       .eq("eitaa_id", user.eitaa_id)
-//       .select()
-//       .single();
-
-//     if (error) {
-//       console.error(error);
-//       if (error.code === "23505") {
-//         alert("این شماره دانشجویی قبلاً ثبت شده است!");
-//       } else {
-//         alert("خطا در ثبت اطلاعات. لطفاً دوباره تلاش کنید.");
-//       }
-//     } else {
-//       // موفقیت
-//       setUser(data);
-//       navigate("/dashboard"); // 👈 هدایت قطعی به داشبورد
-//     }
-//     setIsSubmitting(false);
-//   };
-
-//   return (
-//     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
-//       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
-//         <h1 className="mb-6 text-center text-2xl font-black text-cyan-800">
-//           تکمیل مشخصات
-//         </h1>
-
-//         {/* نمایش شماره موبایل تایید شده */}
-//         <div className="mb-4">
-//           <label className="mb-1 block text-xs font-bold text-gray-500">
-//             شماره موبایل تایید شده:
-//           </label>
-//           <div className="w-full rounded-xl border border-green-200 bg-green-50 p-3 text-center font-mono font-bold tracking-widest text-green-700">
-//             {user.phone_number} ✅
-//           </div>
-//         </div>
-
-//         <div className="mb-6">
-//           <label className="mb-1 block text-sm font-bold text-gray-700">
-//             شماره دانشجویی:
-//           </label>
-//           <input
-//             type="text" // 👈 تغییر به text برای پشتیبانی از فارسی
-//             inputMode="numeric" // کیبورد موبایل عددی میشه
-//             value={studentId}
-//             onChange={(e) => setStudentId(toEng(e.target.value))} // 👈 تبدیل آنی به انگلیسی
-//             placeholder="مثلا 99123456"
-//             className="w-full rounded-xl border border-gray-300 p-3 text-center text-lg tracking-widest transition-all outline-none focus:border-cyan-600"
-//           />
-//         </div>
-
-//         <Button handleClick={handleRegister} className="w-full">
-//           {isSubmitting ? "درحال ثبت..." : "تایید و ورود به سامانه"}
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// --------------------------------------------------------------------------------------
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
-import Button from "../ui/Button";
 
-const toEng = (str) => {
-  return (
-    str
-      ?.toString()
-      .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
-      .replace(/[^0-9]/g, "") || ""
-  );
-};
-
+const toEng = (str) =>
+  str
+    ?.toString()
+    .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+    .replace(/[^0-9]/g, "") || "";
 const ADMIN_SECRET_CODE = "123456";
 
 export default function Login() {
   const { user, setUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-
   const [roleMode, setRoleMode] = useState("user");
   const [formData, setFormData] = useState({ name: "", identifier: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- 🆕 تابع درخواست شماره از ایتا ---
-  const requestPhoneFromEitaa = () => {
-    const requestPhoneFromEitaa = () => {
-      // 🕵️‍♂️ مرحله ۱: جستجوی هوشمند برای پیدا کردن شیء درست
-      // ایتا ممکن است در Telegram.WebApp یا Eitaa.WebApp یا Eitaa.webapp مخفی شده باشد
-      const potentialApps = [
-        window.Telegram?.WebApp, // استاندارد تلگرام
-        window.Eitaa?.WebApp, // استاندارد ایتا (احتمالی)
-        window.Eitaa?.webapp, // آن چیزی که در لاگ دیدی
-        window.eitaa?.WebApp,
-        window.WebApp, // متغیر جهانی
-      ];
-
-      // پیدا کردن اولین آبجکتی که requestContact دارد
-      const app = potentialApps.find((a) => a && a.requestContact);
-
-      if (app) {
-        console.log("✅ شیء استاندارد پیدا شد. نسخه:", app.version);
-
-        // اجرای روش استاندارد
-        app.requestContact((isShared, dataString) => {
-          if (isShared) {
-            alert("✅ شماره دریافت شد! لطفا صبر کنید...");
-            // ارسال به دیتابیس (فعلا نمایش)
-            alert("DATA: " + JSON.stringify(dataString));
-          } else {
-            alert("❌ دسترسی رد شد.");
-          }
-        });
-      } else {
-        // 🏴‍☠️ مرحله ۲: روش هکری (Direct Event)
-        // اگر تابع استاندارد پیدا نشد، خودمان دستی ایونت را شلیک می‌کنیم!
-        console.warn("تابع استاندارد پیدا نشد. تلاش برای اجرای دستی...");
-
-        // طبق لاگ تو، webView داخل window.Eitaa بود
-        const webView = window.Eitaa?.webView || window.Telegram?.WebView;
-
-        if (webView && webView.postEvent) {
-          alert("⚠️ حالت دستی: درخواست ارسال شد.");
-
-          // این خط دقیقا همان کاری را میکند که تابع requestContact انجام میدهد
-          webView.postEvent("web_app_request_phone", false);
-
-          // نکته: در روش دستی، کال‌بک نداریم. ایتا دیتای شماره را به صورت ایونت برمیگرداند.
-          // ما اینجا یک لیسنر میگذاریم که اگر جوابی آمد بگیریم
-          const checkData = (e) => {
-            if (e.eventType === "main_button_pressed") return; // نویز گیر
-            alert("Event Received: " + JSON.stringify(e));
-          };
-          // تلاش برای گوش دادن به ایونت (ممکن است در همه نسخه‌ها کار نکند)
-          if (window.Telegram?.WebView)
-            window.Telegram.WebView.onEvent("contact_shared", checkData);
-        } else {
-          alert("❌ بن‌بست کامل! نه تابع پیدا شد و نه webView.");
-          alert(
-            "Eitaa Keys: " +
-              (window.Eitaa ? Object.keys(window.Eitaa).join(",") : "NULL"),
-          );
-        }
+  // 👂 گوش‌بایست برای شنیدن جواب ایتا
+  useEffect(() => {
+    // تابعی که وقتی ایتا جواب میده اجرا میشه
+    const handleEitaaEvent = (eventType, eventData) => {
+      if (eventType === "contact_shared") {
+        // اگر شماره اومد، نشون بده (اینجا فقط الرت میدیم فعلا)
+        alert("✅ شماره دریافت شد!\n" + JSON.stringify(eventData));
+        // قدم بعدی: ذخیره در دیتابیس
       }
     };
+
+    // متصل کردن گوش‌بایست
+    if (window.Telegram?.WebView) {
+      window.Telegram.WebView.onEvent("contact_shared", handleEitaaEvent);
+    }
+
+    return () => {
+      // پاکسازی هنگام خروج
+      if (window.Telegram?.WebView) {
+        window.Telegram.WebView.offEvent("contact_shared", handleEitaaEvent);
+      }
+    };
+  }, []);
+
+  // 🔥 تابع درخواست شماره (با مدیریت خطا)
+  const handleRequestPhone = (e) => {
+    // 1. جلوگیری از رفرش شدن صفحه (حیاتی!)
+    e.preventDefault();
+
+    try {
+      // پیدا کردن آبجکت اصلی (بر اساس کدی که دادی، باید WebApp باشه)
+      const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
+      const webView = window.Eitaa?.WebView || window.Telegram?.WebView;
+
+      if (app && app.requestContact) {
+        console.log("تلاش با روش استاندارد...");
+        // فراخوانی تابع رسمی
+        app.requestContact((isShared, data) => {
+          if (isShared) alert("تایید شد: " + data);
+          else alert("رد شد.");
+        });
+      }
+      // اگر تابع استاندارد نبود یا ارور داد، میریم سراغ روش مستقیم (طبق کد خودت)
+      else if (webView && webView.postEvent) {
+        console.log("تلاش با روش مستقیم (postEvent)...");
+        webView.postEvent("web_app_request_phone", false, "");
+      } else {
+        throw new Error("هیچ راه ارتباطی با ایتا پیدا نشد.");
+      }
+    } catch (err) {
+      // 🛡️ اینجا ارورهای ایتا رو میگیریم که صفحه نپره
+      console.error("خطای ایتا:", err);
+
+      if (err.message === "WebAppContactRequested") {
+        alert("⚠️ درخواست قبلی هنوز در جریان است. لطفا چند لحظه صبر کنید.");
+      } else {
+        alert("❌ خطا: " + err.message);
+      }
+    }
   };
 
-  // لودینگ اولیه
-  if (authLoading)
-    return <div className="p-10 text-center">درحال بررسی هویت...</div>;
+  // --- رندر ---
+  if (authLoading) return <div className="p-10 text-center">...</div>;
 
-  // ---------------------------------------------------------
-  // ⛔️ سناریوی ۱: شماره تلفن نیست (اینجا رو تغییر دادیم)
-  // ---------------------------------------------------------
+  // سناریوی ۱: شماره نیست
   if (!user || !user.phone_number) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 p-6 text-center">
-        <div className="w-full max-w-sm rounded-2xl border-t-4 border-yellow-500 bg-white p-8 shadow-lg">
-          <div className="mb-4 text-5xl">📱</div>
-          <h1 className="text-xl font-bold text-gray-800">
-            تایید شماره موبایل
-          </h1>
-          <p className="mt-4 text-sm leading-relaxed text-gray-600">
-            برای شرکت در آزمون و احراز هویت، نیاز است که شماره موبایل خود را
-            تایید کنید.
-          </p>
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
+          <h1 className="mb-4 text-xl font-bold">تایید شماره موبایل</h1>
 
-          {/* دکمه جادویی درخواست کانتکت */}
-          <Button
-            handleClick={requestPhoneFromEitaa}
-            className="mt-6 w-full animate-pulse !bg-blue-600 hover:!bg-blue-700"
+          {/* دکمه ساده HTML برای اطمینان از نبودن باگ کامپوننت */}
+          <button
+            onClick={handleRequestPhone}
+            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white shadow-md transition-transform active:scale-95"
           >
-            ارسال شماره موبایل
-          </Button>
+            ارسال شماره 📱
+          </button>
 
           <p className="mt-4 text-xs text-gray-400">
-            پیامی نمایش داده می‌شود، گزینه «تایید» را بزنید.
+            اگر دکمه کار نکرد، لطفا از دکمه پایین ربات استفاده کنید.
           </p>
         </div>
       </div>
     );
   }
 
-  // ---------------------------------------------------------
-  // ✅ سناریوی ۲: شماره هست، تکمیل مشخصات (کد قبلی)
-  // ---------------------------------------------------------
+  // ... (بقیه کدهای فرم ثبت نام بدون تغییر) ...
+  // فقط بخش return نهایی را کپی کن:
   const handleRegister = async () => {
-    if (!formData.name.trim()) {
-      alert("لطفا نام خود را وارد کنید.");
-      return;
-    }
-
-    if (roleMode === "admin") {
-      if (formData.identifier !== ADMIN_SECRET_CODE) {
-        alert("⛔️ کد دسترسی اشتباه است!");
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
-
-    const profileUpdate = {
-      first_name: formData.name,
-      role: roleMode,
-      student_id:
-        roleMode === "user" && formData.identifier ? formData.identifier : null,
-    };
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .update(profileUpdate)
-      .eq("eitaa_id", user.eitaa_id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("خطا در ثبت اطلاعات.");
-    } else {
-      setUser(data);
-      navigate("/dashboard");
-    }
-    setIsSubmitting(false);
+    /* ... کد قبلی ... */
   };
 
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
-        {/* انتخاب نقش */}
+        {/* تب‌ها */}
         <div className="mb-6 flex rounded-xl bg-gray-100 p-1">
           <button
             onClick={() => setRoleMode("user")}
@@ -460,14 +133,12 @@ export default function Login() {
           {roleMode === "user" ? "اطلاعات کاربری" : "پنل اساتید"}
         </h1>
 
-        {/* نمایش شماره موبایل تایید شده */}
         <div className="mb-6 text-center">
           <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
             شماره تایید شده: {user.phone_number} ✅
           </span>
         </div>
 
-        {/* ورودی نام */}
         <div className="mb-4">
           <label className="mb-1 block text-sm font-bold text-gray-700">
             نام و نام خانوادگی <span className="text-red-500">*</span>
@@ -480,7 +151,6 @@ export default function Login() {
           />
         </div>
 
-        {/* ورودی متغیر */}
         <div className="mb-6">
           <label className="mb-1 block text-sm font-bold text-gray-700">
             {roleMode === "user" ? "شماره دانشجویی (اختیاری)" : "کد دسترسی"}
@@ -503,140 +173,3 @@ export default function Login() {
     </div>
   );
 }
-
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom"; // 👈 اینو لازم داشتیم
-// import { useAuth } from "../context/AuthContext";
-// import { supabase } from "../supabase";
-// import Button from "../ui/Button";
-
-// // تابع تبدیل عدد فارسی به انگلیسی و حذف حروف اضافه
-// const toEng = (str) => {
-//   return str
-//     .toString()
-//     .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)) // تبدیل فارسی به انگلیسی
-//     .replace(/[^0-9]/g, ""); // حذف هر چیزی که عدد نیست
-// };
-
-// export default function Login() {
-//   const { user, setUser, loading: authLoading } = useAuth();
-//   const navigate = useNavigate(); // 👈 هوک برای تغییر صفحه
-
-//   const [formData, setFormData] = useState({
-//     studentId: "",
-//     phone: "",
-//   });
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   // پر کردن فرم اگر اطلاعاتی از قبل موجود است
-//   useEffect(() => {
-//     if (user) {
-//       setFormData({
-//         studentId: user.student_id || "",
-//         phone: user.phone_number || "",
-//       });
-//     }
-//   }, [user]);
-
-//   // هندلر تغییر ورودی‌ها (برای تبدیل خودکار فارسی به انگلیسی)
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     // بلافاصله تبدیل به انگلیسی میکنیم
-//     setFormData((prev) => ({
-//       ...prev,
-//       [name]: toEng(value),
-//     }));
-//   };
-
-//   const handleRegister = async () => {
-//     if (!formData.studentId || !formData.phone) {
-//       alert("لطفا شماره دانشجویی و موبایل را وارد کنید.");
-//       return;
-//     }
-
-//     setIsSubmitting(true);
-
-//     const profileData = {
-//       eitaa_id: user.eitaa_id,
-//       student_id: formData.studentId,
-//       phone_number: formData.phone,
-//       first_name:
-//         window.eitaa?.initDataUnsafe?.user?.first_name || "کاربر تستی",
-//     };
-
-//     const { data, error } = await supabase
-//       .from("profiles")
-//       .upsert(profileData, { onConflict: "eitaa_id" })
-//       .select()
-//       .single();
-
-//     if (error) {
-//       console.error(error);
-//       if (error.code === "23505") {
-//         alert("این شماره دانشجویی قبلاً ثبت شده است!");
-//       } else {
-//         alert("خطا در ثبت اطلاعات.");
-//       }
-//     } else {
-//       // موفقیت:
-//       setUser(data); // ۱. کانتکست آپدیت شد
-//       navigate("/dashboard"); // ۲. 👈 حالا برو تو! (حل مشکل کار نکردن دکمه)
-//     }
-//     setIsSubmitting(false);
-//   };
-
-//   if (authLoading)
-//     return <div className="p-10 text-center">درحال بارگذاری...</div>;
-
-//   return (
-//     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
-//       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
-//         <h1 className="mb-6 text-center text-2xl font-black text-cyan-800">
-//           ورود به سامانه
-//         </h1>
-
-//         {/* فیلد شماره موبایل */}
-//         <div className="mb-4">
-//           <label className="mb-1 block text-sm font-bold text-gray-700">
-//             شماره موبایل:
-//           </label>
-//           <input
-//             type="text" // 👈 حتما text باشه تا فارسی تایپ شه
-//             inputMode="numeric" // کیبورد موبایل عددی باز شه
-//             dir="ltr"
-//             name="phone"
-//             disabled={user?.phone_number ? true : false}
-//             value={formData.phone}
-//             onChange={handleChange} // تابع هندلر جدید
-//             placeholder="0912..."
-//             className={`w-full rounded-xl border p-3 text-center tracking-widest transition-all outline-none ${
-//               user?.phone_number
-//                 ? "border-gray-200 bg-gray-100 text-gray-500"
-//                 : "border-gray-300 bg-white focus:border-cyan-600"
-//             }`}
-//           />
-//         </div>
-
-//         {/* فیلد شماره دانشجویی */}
-//         <div className="mb-6">
-//           <label className="mb-1 block text-sm font-bold text-gray-700">
-//             شماره دانشجویی:
-//           </label>
-//           <input
-//             type="text" // 👈 text برای پشتیبانی از فارسی
-//             inputMode="numeric"
-//             name="studentId"
-//             value={formData.studentId}
-//             onChange={handleChange}
-//             placeholder="99123456"
-//             className="w-full rounded-xl border border-gray-300 p-3 text-center text-lg tracking-widest transition-all outline-none focus:border-cyan-600"
-//           />
-//         </div>
-
-//         <Button handleClick={handleRegister} className="w-full">
-//           {isSubmitting ? "درحال ثبت..." : "تایید و ورود"}
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
