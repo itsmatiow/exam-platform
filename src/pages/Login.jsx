@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
+import Button from "../ui/Button";
 
 const toEng = (str) =>
   str
@@ -16,64 +17,114 @@ export default function Login() {
   const [roleMode, setRoleMode] = useState("user");
   const [formData, setFormData] = useState({ name: "", identifier: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneSaving, setPhoneSaving] = useState(false); // لودینگ دکمه شماره
 
-  // 👂 گوش‌بایست برای شنیدن جواب ایتا
+  // 💾 تابع حیاتی: ذخیره شماره در دیتابیس
+  const savePhoneNumber = async (rawContactData) => {
+    setPhoneSaving(true);
+    try {
+      console.log("دیتای خام دریافتی:", rawContactData);
+
+      let phone = "";
+
+      // 1. استخراج شماره از انواع فرمت‌های احتمالی ایتا
+      if (typeof rawContactData === "string") {
+        // اگر رشته جیسون بود پارس کن
+        try {
+          const parsed = JSON.parse(rawContactData);
+          phone = parsed.phone_number || parsed.contact?.phone_number;
+        } catch (e) {
+          // شاید خود رشته مستقیماً شماره باشه؟
+          phone = rawContactData;
+        }
+      } else if (typeof rawContactData === "object") {
+        phone =
+          rawContactData.phone_number || rawContactData.contact?.phone_number;
+      }
+
+      if (!phone) {
+        alert("فرمت شماره دریافتی نامعتبر است. لطفا لاگ را چک کنید.");
+        alert("Raw: " + JSON.stringify(rawContactData));
+        setPhoneSaving(false);
+        return;
+      }
+
+      // 2. تمیزکاری شماره (حذف +98 و ...)
+      // تبدیل به انگلیسی
+      phone = toEng(phone);
+      if (phone.startsWith("98")) phone = "0" + phone.slice(2);
+      if (phone.startsWith("+98")) phone = "0" + phone.slice(3);
+      if (!phone.startsWith("0")) phone = "0" + phone;
+
+      // 3. آپدیت دیتابیس
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ phone_number: phone })
+        .eq("eitaa_id", user.eitaa_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 4. 🎉 موفقیت! آپدیت کانتکست (این خط باعث میشه صفحه عوض شه)
+      alert("✅ شماره شما با موفقیت ثبت شد!");
+      setUser(data);
+    } catch (err) {
+      console.error(err);
+      alert("خطا در ذخیره شماره: " + err.message);
+    } finally {
+      setPhoneSaving(false);
+    }
+  };
+
+  // 👂 لیسنر ایونت‌ها
   useEffect(() => {
-    // تابعی که وقتی ایتا جواب میده اجرا میشه
     const handleEitaaEvent = (eventType, eventData) => {
       if (eventType === "contact_shared") {
-        // اگر شماره اومد، نشون بده (اینجا فقط الرت میدیم فعلا)
-        alert("✅ شماره دریافت شد!\n" + JSON.stringify(eventData));
-        // قدم بعدی: ذخیره در دیتابیس
+        // وقتی ایونت اومد، تابع ذخیره رو صدا بزن
+        savePhoneNumber(eventData);
       }
     };
 
-    // متصل کردن گوش‌بایست
     if (window.Telegram?.WebView) {
       window.Telegram.WebView.onEvent("contact_shared", handleEitaaEvent);
     }
 
     return () => {
-      // پاکسازی هنگام خروج
       if (window.Telegram?.WebView) {
         window.Telegram.WebView.offEvent("contact_shared", handleEitaaEvent);
       }
     };
-  }, []);
+  }, []); // وابستگی خالی
 
-  // 🔥 تابع درخواست شماره (با مدیریت خطا)
+  // 🔥 هندل کلیک دکمه
   const handleRequestPhone = (e) => {
-    // 1. جلوگیری از رفرش شدن صفحه (حیاتی!)
     e.preventDefault();
-
     try {
-      // پیدا کردن آبجکت اصلی (بر اساس کدی که دادی، باید WebApp باشه)
       const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
       const webView = window.Eitaa?.WebView || window.Telegram?.WebView;
 
       if (app && app.requestContact) {
-        console.log("تلاش با روش استاندارد...");
-        // فراخوانی تابع رسمی
         app.requestContact((isShared, data) => {
-          if (isShared) alert("تایید شد: " + data);
-          else alert("رد شد.");
+          if (isShared) {
+            // اگر از طریق کال‌بک جواب داد
+            savePhoneNumber(data);
+          }
         });
-      }
-      // اگر تابع استاندارد نبود یا ارور داد، میریم سراغ روش مستقیم (طبق کد خودت)
-      else if (webView && webView.postEvent) {
-        console.log("تلاش با روش مستقیم (postEvent)...");
+      } else if (webView && webView.postEvent) {
         webView.postEvent("web_app_request_phone", false, "");
       } else {
-        throw new Error("هیچ راه ارتباطی با ایتا پیدا نشد.");
+        throw new Error("امکان درخواست شماره وجود ندارد.");
       }
     } catch (err) {
-      // 🛡️ اینجا ارورهای ایتا رو میگیریم که صفحه نپره
-      console.error("خطای ایتا:", err);
-
-      if (err.message === "WebAppContactRequested") {
-        alert("⚠️ درخواست قبلی هنوز در جریان است. لطفا چند لحظه صبر کنید.");
+      // مدیریت خطای WebAppContactRequested
+      if (
+        err.message === "WebAppContactRequested" ||
+        (err.message && err.message.includes("Contact"))
+      ) {
+        alert("⚠️ پنجره درخواست باز است. لطفا تایید کنید.");
       } else {
-        alert("❌ خطا: " + err.message);
+        alert("خطا: " + err.message);
       }
     }
   };
@@ -88,26 +139,55 @@ export default function Login() {
         <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
           <h1 className="mb-4 text-xl font-bold">تایید شماره موبایل</h1>
 
-          {/* دکمه ساده HTML برای اطمینان از نبودن باگ کامپوننت */}
           <button
             onClick={handleRequestPhone}
-            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white shadow-md transition-transform active:scale-95"
+            disabled={phoneSaving}
+            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white shadow-md transition-transform active:scale-95 disabled:bg-gray-400"
           >
-            ارسال شماره 📱
+            {phoneSaving ? "درحال ذخیره..." : "ارسال شماره 📱"}
           </button>
 
           <p className="mt-4 text-xs text-gray-400">
-            اگر دکمه کار نکرد، لطفا از دکمه پایین ربات استفاده کنید.
+            با زدن این دکمه، پنجره‌ای باز می‌شود. گزینه «ارسال» را بزنید.
           </p>
         </div>
       </div>
     );
   }
 
-  // ... (بقیه کدهای فرم ثبت نام بدون تغییر) ...
-  // فقط بخش return نهایی را کپی کن:
+  // سناریوی ۲: فرم ثبت نام (بدون تغییر)
   const handleRegister = async () => {
-    /* ... کد قبلی ... */
+    if (!formData.name.trim()) {
+      alert("نام الزامی است");
+      return;
+    }
+    if (roleMode === "admin" && formData.identifier !== ADMIN_SECRET_CODE) {
+      alert("کد غلط است");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        first_name: formData.name,
+        role: roleMode,
+        student_id:
+          roleMode === "user" && formData.identifier
+            ? formData.identifier
+            : null,
+      })
+      .eq("eitaa_id", user.eitaa_id)
+      .select()
+      .single();
+
+    if (!error) {
+      setUser(data);
+      navigate("/dashboard");
+    } else {
+      alert("خطا: " + error.message);
+    }
+    setIsSubmitting(false);
   };
 
   return (
@@ -141,7 +221,7 @@ export default function Login() {
 
         <div className="mb-4">
           <label className="mb-1 block text-sm font-bold text-gray-700">
-            نام و نام خانوادگی <span className="text-red-500">*</span>
+            نام نمایشی <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -167,7 +247,7 @@ export default function Login() {
         </div>
 
         <Button handleClick={handleRegister} className="w-full">
-          {isSubmitting ? "درحال ثبت..." : "ورود به سامانه"}
+          {isSubmitting ? "ورود..." : "تایید و ادامه"}
         </Button>
       </div>
     </div>
