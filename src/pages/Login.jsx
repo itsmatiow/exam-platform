@@ -20,130 +20,68 @@ export default function Login() {
   const [phoneSaving, setPhoneSaving] = useState(false); // لودینگ دکمه شماره
 
   // 💾 تابع حیاتی: ذخیره شماره در دیتابیس
+  // 💾 تابع اصلاح شده برای رفع ارور Single JSON Object
   const savePhoneNumber = async (rawContactData) => {
     setPhoneSaving(true);
     try {
-      console.log("دیتای خام دریافتی:", rawContactData);
+      console.log("دیتای خام:", rawContactData);
+
       let parsedData = rawContactData;
       let phone = "";
 
-      // 1. استخراج شماره از انواع فرمت‌های احتمالی ایتا
+      // 1. پارس کردن دیتا
       if (typeof rawContactData === "string") {
-        // اگر رشته جیسون بود پارس کن
         try {
-          const parsed = JSON.parse(rawContactData);
-          phone = parsed.phone_number || parsed.contact?.phone_number;
+          parsedData = JSON.parse(rawContactData);
         } catch (e) {
-          // شاید خود رشته مستقیماً شماره باشه؟
-          phone = rawContactData;
+          /* شاید خود رشته شماره باشه */
         }
-      } else if (typeof rawContactData === "object") {
-        phone =
-          rawContactData.phone_number || rawContactData.contact?.phone_number;
       }
-      // 2. 🎯 استخراج دقیق شماره (طبق عکس)
-      // مسیر: responseUnsafe -> contact -> phone
+
+      // 2. استخراج شماره (طبق عکس شما)
       if (parsedData?.responseUnsafe?.contact?.phone) {
         phone = parsedData.responseUnsafe.contact.phone;
-      }
-      // مسیرهای جایگزین (محض احتیاط برای نسخه‌های دیگر)
-      else if (parsedData?.phone_number) {
+      } else if (parsedData?.phone_number) {
         phone = parsedData.phone_number;
       } else if (parsedData?.contact?.phone) {
         phone = parsedData.contact.phone;
       }
 
       if (!phone) {
-        alert("متاسفانه فرمت شماره خوانده نشد.");
-        // نمایش دیتای خام برای دیباگ نهایی (اگر باز هم نشد)
-        console.log(JSON.stringify(parsedData));
+        alert("شماره پیدا نشد. فرمت نامعتبر است.");
         setPhoneSaving(false);
         return;
       }
 
-      // 3. تمیزکاری شماره (طبق عکس شماره با 98 شروع میشه)
-      phone = toEng(phone.toString()); // تبدیل اعداد فارسی احتمالی
+      // 3. فرمت‌دهی شماره (تبدیل به 09...)
+      phone = toEng(phone.toString());
+      if (phone.startsWith("98")) phone = "0" + phone.slice(2);
+      else if (phone.startsWith("+98")) phone = "0" + phone.slice(3);
+      else if (!phone.startsWith("0")) phone = "0" + phone;
 
-      // حذف 98 اول (مثل عکسی که فرستادی: 98993...)
-      if (phone.startsWith("98")) {
-        phone = "0" + phone.slice(2); // میشه 0993...
-      } else if (phone.startsWith("+98")) {
-        phone = "0" + phone.slice(3);
-      } else if (!phone.startsWith("0")) {
-        phone = "0" + phone;
-      }
-
-      // 4. آپدیت دیتابیس
+      // 4. 🛠️ تغییر مهم: استفاده از Upsert به جای Update
       const { data, error } = await supabase
         .from("profiles")
-        .update({ phone_number: phone })
-        .eq("eitaa_id", user.eitaa_id)
+        .upsert(
+          {
+            eitaa_id: user.eitaa_id, // کلید اصلی (اجباری برای ساختن)
+            phone_number: phone,
+            role: "user", // مقدار پیش‌فرض اگر کاربر جدید باشد
+          },
+          { onConflict: "eitaa_id" }, // اگر بود، روی همین آیدی آپدیت کن
+        )
         .select()
-        .single();
+        .single(); // حالا دیگه ارور نمیده چون Upsert همیشه خروجی داره
 
       if (error) throw error;
 
-      // 5. موفقیت!
-      // اون الرت طولانی قبلی رو دیگه برداشتم که کاربر اذیت نشه
-      alert("✅ شماره شما با موفقیت تایید شد: " + phone);
-      setUser(data); // این باعث میشه صفحه خودکار بره مرحله بعد
+      alert("✅ شماره شما ثبت شد: " + phone);
+      setUser(data);
     } catch (err) {
       console.error(err);
       alert("خطا در ذخیره: " + err.message);
     } finally {
       setPhoneSaving(false);
-    }
-  };
-
-  // 👂 لیسنر ایونت‌ها
-  useEffect(() => {
-    const handleEitaaEvent = (eventType, eventData) => {
-      if (eventType === "contact_shared") {
-        // وقتی ایونت اومد، تابع ذخیره رو صدا بزن
-        savePhoneNumber(eventData);
-      }
-    };
-
-    if (window.Telegram?.WebView) {
-      window.Telegram.WebView.onEvent("contact_shared", handleEitaaEvent);
-    }
-
-    return () => {
-      if (window.Telegram?.WebView) {
-        window.Telegram.WebView.offEvent("contact_shared", handleEitaaEvent);
-      }
-    };
-  }, []); // وابستگی خالی
-
-  // 🔥 هندل کلیک دکمه
-  const handleRequestPhone = (e) => {
-    e.preventDefault();
-    try {
-      const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
-      const webView = window.Eitaa?.WebView || window.Telegram?.WebView;
-
-      if (app && app.requestContact) {
-        app.requestContact((isShared, data) => {
-          if (isShared) {
-            // اگر از طریق کال‌بک جواب داد
-            savePhoneNumber(data);
-          }
-        });
-      } else if (webView && webView.postEvent) {
-        webView.postEvent("web_app_request_phone", false, "");
-      } else {
-        throw new Error("امکان درخواست شماره وجود ندارد.");
-      }
-    } catch (err) {
-      // مدیریت خطای WebAppContactRequested
-      if (
-        err.message === "WebAppContactRequested" ||
-        (err.message && err.message.includes("Contact"))
-      ) {
-        alert("⚠️ پنجره درخواست باز است. لطفا تایید کنید.");
-      } else {
-        alert("خطا: " + err.message);
-      }
     }
   };
 
