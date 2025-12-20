@@ -299,7 +299,7 @@ export default function Login() {
   // --- 🆕 تابع درخواست شماره از ایتا ---
   const requestPhoneFromEitaa = () => {
     // چک میکنیم شیء ایتا هست یا نه
-    const app = window.eitaa || window.Eitaa;
+    const app = window.eitaa || window.Eitaa || window.Eitaa?.WebApp;
 
     if (app && app.requestContact) {
       app.requestContact(async (isShared, dataString) => {
