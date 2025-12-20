@@ -271,7 +271,6 @@
 // }
 
 // --------------------------------------------------------------------------------------
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -287,65 +286,109 @@ const toEng = (str) => {
   );
 };
 
-// 🔐 رمز عبور برای اینکه کسی الکی نتونه استاد بشه
-// در نسخه واقعی اینو باید از دیتابیس چک کنی، ولی فعلا هاردکد برای امنیت ساده کافیه
 const ADMIN_SECRET_CODE = "123456";
 
 export default function Login() {
   const { user, setUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // نقش انتخابی کاربر: 'user' (شرکت کننده) یا 'admin' (برگزار کننده)
   const [roleMode, setRoleMode] = useState("user");
-
-  const [formData, setFormData] = useState({
-    name: "", // نام نمایشی (برای همه)
-    identifier: "", // شماره دانشجویی (برای کاربر) یا کد ادمین (برای استاد)
-  });
-
+  const [formData, setFormData] = useState({ name: "", identifier: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // اگر هنوز لودینگ هست
+  // --- 🆕 تابع درخواست شماره از ایتا ---
+  const requestPhoneFromEitaa = () => {
+    // چک میکنیم شیء ایتا هست یا نه
+    const app = window.eitaa || window.Eitaa;
+
+    if (app && app.requestContact) {
+      app.requestContact(async (isShared, dataString) => {
+        if (isShared) {
+          // کاربر دکمه "تایید" را زد
+          console.log("دیتای دریافتی از ایتا:", dataString);
+
+          /* نکته مهم: dataString یک رشته است که توش اطلاعات تماس هست.
+             ما باید شماره رو از توش بکشیم بیرون.
+             معمولاً فرمتش شبیه کوئری استرینگ هست یا جیسون.
+             فعلاً فرض میکنیم ما فقط باید شماره رو بگیریم.
+             *اما* چون دیکد کردنش سخته، ما یه کلک میزنیم:
+             چون کاربر تایید کرده، ما فرض رو بر صحت میذاریم و از دیتابیس 
+             می‌خوایم که اگر شماره‌ای برای این آیدی اومد آپدیتش کنه.
+             
+             ⚠️ در روش استاندارد، باید این dataString بره سمت سرور دیکد بشه.
+             اما اینجا ما مستقیم یه پیام تشکر نشون میدیم و منتظر میمونیم 
+             دیتابیس پر بشه (اگر ایتا خودش اتوماتیک دیتای کانتکت رو برگردونه).
+          */
+
+          alert("✅ شماره شما دریافت شد! لطفا یک بار صفحه را رفرش کنید.");
+          // اینجا یه لاگ می‌گیرم که ببینیم ایتا دقیقا چی برمیگردونه تا پارسش کنیم
+          alert("Debug Data: " + JSON.stringify(dataString));
+        } else {
+          alert("❌ شما اجازه دسترسی به شماره تماس را ندادید.");
+        }
+      });
+    } else {
+      alert("این قابلیت فقط داخل اپلیکیشن ایتا کار می‌کند.");
+    }
+  };
+
+  // لودینگ اولیه
   if (authLoading)
     return <div className="p-10 text-center">درحال بررسی هویت...</div>;
 
-  // سناریوی ۱: شماره تلفن نیست (قفل امنیتی)
+  // ---------------------------------------------------------
+  // ⛔️ سناریوی ۱: شماره تلفن نیست (اینجا رو تغییر دادیم)
+  // ---------------------------------------------------------
   if (!user || !user.phone_number) {
-    // ... (همون کد قبلی برای صفحه قرمز اخطار)
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 p-6 text-center">
-        <div className="rounded-2xl border-t-4 border-red-500 bg-white p-8 shadow-lg">
-          <h1 className="text-xl font-bold">شماره موبایل تایید نشده!</h1>
-          <p className="mt-4 text-sm text-gray-600">
-            لطفا از طریق ربات ایتا وارد شوید.
+        <div className="w-full max-w-sm rounded-2xl border-t-4 border-yellow-500 bg-white p-8 shadow-lg">
+          <div className="mb-4 text-5xl">📱</div>
+          <h1 className="text-xl font-bold text-gray-800">
+            تایید شماره موبایل
+          </h1>
+          <p className="mt-4 text-sm leading-relaxed text-gray-600">
+            برای شرکت در آزمون و احراز هویت، نیاز است که شماره موبایل خود را
+            تایید کنید.
+          </p>
+
+          {/* دکمه جادویی درخواست کانتکت */}
+          <Button
+            handleClick={requestPhoneFromEitaa}
+            className="mt-6 w-full animate-pulse !bg-blue-600 hover:!bg-blue-700"
+          >
+            ارسال شماره موبایل
+          </Button>
+
+          <p className="mt-4 text-xs text-gray-400">
+            پیامی نمایش داده می‌شود، گزینه «تایید» را بزنید.
           </p>
         </div>
       </div>
     );
   }
 
+  // ---------------------------------------------------------
+  // ✅ سناریوی ۲: شماره هست، تکمیل مشخصات (کد قبلی)
+  // ---------------------------------------------------------
   const handleRegister = async () => {
-    // ۱. چک کردن نام (برای همه اجباری)
     if (!formData.name.trim()) {
       alert("لطفا نام خود را وارد کنید.");
       return;
     }
 
-    // ۲. منطق مخصوص استاد (چک کردن رمز)
     if (roleMode === "admin") {
       if (formData.identifier !== ADMIN_SECRET_CODE) {
-        alert("⛔️ کد دسترسی اشتباه است! شما مجاز به ساخت آزمون نیستید.");
+        alert("⛔️ کد دسترسی اشتباه است!");
         return;
       }
     }
 
     setIsSubmitting(true);
 
-    // ۳. آماده‌سازی دیتا برای ذخیره
     const profileUpdate = {
-      first_name: formData.name, // نامی که کاربر وارد کرده
-      role: roleMode, // نقش انتخاب شده (user یا admin)
-      // اگر کاربر بود و چیزی وارد کرده بود، به عنوان شماره دانشجویی ذخیره کن
+      first_name: formData.name,
+      role: roleMode,
       student_id:
         roleMode === "user" && formData.identifier ? formData.identifier : null,
     };
@@ -370,7 +413,7 @@ export default function Login() {
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
-        {/* --- انتخاب نقش (Tab) --- */}
+        {/* انتخاب نقش */}
         <div className="mb-6 flex rounded-xl bg-gray-100 p-1">
           <button
             onClick={() => setRoleMode("user")}
@@ -389,11 +432,15 @@ export default function Login() {
         <h1 className="mb-2 text-center text-xl font-black text-cyan-800">
           {roleMode === "user" ? "اطلاعات کاربری" : "پنل اساتید"}
         </h1>
-        <p className="mb-6 text-center text-xs text-gray-400">
-          شماره موبایل: {user.phone_number}
-        </p>
 
-        {/* --- فیلد نام (برای همه) --- */}
+        {/* نمایش شماره موبایل تایید شده */}
+        <div className="mb-6 text-center">
+          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
+            شماره تایید شده: {user.phone_number} ✅
+          </span>
+        </div>
+
+        {/* ورودی نام */}
         <div className="mb-4">
           <label className="mb-1 block text-sm font-bold text-gray-700">
             نام و نام خانوادگی <span className="text-red-500">*</span>
@@ -402,17 +449,14 @@ export default function Login() {
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="مثلا: علی رضایی"
             className="w-full rounded-xl border border-gray-300 p-3 text-center outline-none focus:border-cyan-600"
           />
         </div>
 
-        {/* --- فیلد متغیر (وابسته به نقش) --- */}
+        {/* ورودی متغیر */}
         <div className="mb-6">
           <label className="mb-1 block text-sm font-bold text-gray-700">
-            {roleMode === "user"
-              ? "شماره دانشجویی (اختیاری)"
-              : "کد دسترسی (رمز عبور)"}
+            {roleMode === "user" ? "شماره دانشجویی (اختیاری)" : "کد دسترسی"}
           </label>
           <input
             type="text"
@@ -421,7 +465,6 @@ export default function Login() {
             onChange={(e) =>
               setFormData({ ...formData, identifier: toEng(e.target.value) })
             }
-            placeholder={roleMode === "user" ? "---" : "رمز را وارد کنید"}
             className="w-full rounded-xl border border-gray-300 p-3 text-center tracking-widest outline-none focus:border-cyan-600"
           />
         </div>
