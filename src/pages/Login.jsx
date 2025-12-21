@@ -298,28 +298,128 @@ export default function Login() {
   // ----------------------------------------------------------------
   // 1️⃣ تابع هوشمند ذخیره شماره (حل مشکل تغییر آیدی)
   // ----------------------------------------------------------------
+  // const savePhoneNumber = async (rawContactData) => {
+  //   // جلوگیری از خطا در صورتی که کانتکست هنوز لود نشده
+  //   if (!user || !user.eitaa_id) {
+  //     console.warn("User ID not found in context yet.");
+  //     // ادامه میدهیم چون ممکن است کاربر جدید باشد و فقط شماره مهم است
+  //   }
+
+  //   setPhoneSaving(true);
+  //   try {
+  //     console.log("دیتای دریافتی:", rawContactData);
+
+  //     let parsedData = rawContactData;
+  //     let phone = "";
+
+  //     // تبدیل فرمت‌های مختلف به جیسون
+  //     if (typeof rawContactData === "string") {
+  //       try {
+  //         parsedData = JSON.parse(rawContactData);
+  //       } catch (e) {}
+  //     }
+
+  //     // استخراج شماره از لایه‌های مختلف (طبق عکس‌های ارسالی شما)
+  //     if (parsedData?.responseUnsafe?.contact?.phone) {
+  //       phone = parsedData.responseUnsafe.contact.phone;
+  //     } else if (parsedData?.phone_number) {
+  //       phone = parsedData.phone_number;
+  //     } else if (parsedData?.contact?.phone) {
+  //       phone = parsedData.contact.phone;
+  //     }
+
+  //     if (!phone) {
+  //       alert("شماره خوانده نشد. لطفاً مجدد تلاش کنید.");
+  //       setPhoneSaving(false);
+  //       return;
+  //     }
+
+  //     // استانداردسازی شماره (تبدیل به 09...)
+  //     phone = toEng(phone.toString());
+  //     if (phone.startsWith("98")) phone = "0" + phone.slice(2);
+  //     else if (phone.startsWith("+98")) phone = "0" + phone.slice(3);
+  //     else if (!phone.startsWith("0")) phone = "0" + phone;
+
+  //     console.log("شماره نهایی برای پردازش:", phone);
+
+  //     // 🔍 قدم اول: جستجو بر اساس شماره تلفن (چون شماره ثابت است اما آیدی تغییر می‌کند)
+  //     const { data: existingUser, error: searchError } = await supabase
+  //       .from("profiles")
+  //       .select("*")
+  //       .eq("phone_number", phone)
+  //       .maybeSingle(); // استفاده از maybeSingle که اگر نبود ارور ندهد
+
+  //     if (searchError) throw searchError;
+
+  //     let finalUser = null;
+
+  //     if (existingUser) {
+  //       // ✅ سناریو ۱: کاربر قدیمی است (قبلاً با این شماره بوده)
+  //       // پس آیدی جدید ایتا (user.eitaa_id) را روی پروفایل قدیمی او ست می‌کنیم
+  //       console.log("کاربر قدیمی یافت شد. همگام‌سازی آیدی...");
+
+  //       const { data, error } = await supabase
+  //         .from("profiles")
+  //         .update({
+  //           eitaa_id: user.eitaa_id, // بروزرسانی آیدی برای دسترسی‌های بعدی
+  //         })
+  //         .eq("phone_number", phone)
+  //         .select()
+  //         .single();
+
+  //       if (error) throw error;
+  //       finalUser = data;
+  //     } else {
+  //       // 🆕 سناریو ۲: کاربر کاملاً جدید است
+  //       console.log("کاربر جدید. ایجاد حساب...");
+
+  //       const { data, error } = await supabase
+  //         .from("profiles")
+  //         .insert({
+  //           eitaa_id: user.eitaa_id,
+  //           phone_number: phone,
+  //           role: "user",
+  //           first_name: "کاربر جدید",
+  //         })
+  //         .select()
+  //         .single();
+
+  //       if (error) throw error;
+  //       finalUser = data;
+  //     }
+
+  //     // پایان موفقیت‌آمیز
+  //     alert("✅ شماره تایید شد: " + phone);
+  //     setUser(finalUser);
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("خطا در عملیات: " + err.message);
+  //   } finally {
+  //     setPhoneSaving(false);
+  //   }
+  // };
+  // 💾 تابع اصلاح شده (رفع باگ JSON Object)
   const savePhoneNumber = async (rawContactData) => {
-    // جلوگیری از خطا در صورتی که کانتکست هنوز لود نشده
+    // جلوگیری از اجرا اگر کانتکست ناقص است
     if (!user || !user.eitaa_id) {
-      console.warn("User ID not found in context yet.");
-      // ادامه میدهیم چون ممکن است کاربر جدید باشد و فقط شماره مهم است
+      console.warn("User context missing.");
+      // ادامه میدهیم (شاید فقط ذخیره شماره مهم باشد)
     }
 
     setPhoneSaving(true);
     try {
-      console.log("دیتای دریافتی:", rawContactData);
+      console.log("دیتای خام:", rawContactData);
 
       let parsedData = rawContactData;
       let phone = "";
 
-      // تبدیل فرمت‌های مختلف به جیسون
+      // 1. استخراج شماره
       if (typeof rawContactData === "string") {
         try {
           parsedData = JSON.parse(rawContactData);
         } catch (e) {}
       }
 
-      // استخراج شماره از لایه‌های مختلف (طبق عکس‌های ارسالی شما)
       if (parsedData?.responseUnsafe?.contact?.phone) {
         phone = parsedData.responseUnsafe.contact.phone;
       } else if (parsedData?.phone_number) {
@@ -329,50 +429,43 @@ export default function Login() {
       }
 
       if (!phone) {
-        alert("شماره خوانده نشد. لطفاً مجدد تلاش کنید.");
+        alert("شماره یافت نشد.");
         setPhoneSaving(false);
         return;
       }
 
-      // استانداردسازی شماره (تبدیل به 09...)
+      // 2. استانداردسازی
       phone = toEng(phone.toString());
       if (phone.startsWith("98")) phone = "0" + phone.slice(2);
       else if (phone.startsWith("+98")) phone = "0" + phone.slice(3);
       else if (!phone.startsWith("0")) phone = "0" + phone;
 
-      console.log("شماره نهایی برای پردازش:", phone);
-
-      // 🔍 قدم اول: جستجو بر اساس شماره تلفن (چون شماره ثابت است اما آیدی تغییر می‌کند)
+      // 3. 🔍 جستجو (اصلاح شده با maybeSingle)
       const { data: existingUser, error: searchError } = await supabase
         .from("profiles")
         .select("*")
         .eq("phone_number", phone)
-        .maybeSingle(); // استفاده از maybeSingle که اگر نبود ارور ندهد
+        .maybeSingle(); // 👈 تفاوت کلیدی: اگر نبود، نال برمیگرداند نه ارور
 
       if (searchError) throw searchError;
 
       let finalUser = null;
 
       if (existingUser) {
-        // ✅ سناریو ۱: کاربر قدیمی است (قبلاً با این شماره بوده)
-        // پس آیدی جدید ایتا (user.eitaa_id) را روی پروفایل قدیمی او ست می‌کنیم
-        console.log("کاربر قدیمی یافت شد. همگام‌سازی آیدی...");
-
+        // ✅ کاربر هست -> آپدیت آیدی ایتا
+        console.log("کاربر قدیمی. بروزرسانی...");
         const { data, error } = await supabase
           .from("profiles")
-          .update({
-            eitaa_id: user.eitaa_id, // بروزرسانی آیدی برای دسترسی‌های بعدی
-          })
+          .update({ eitaa_id: user.eitaa_id })
           .eq("phone_number", phone)
           .select()
-          .single();
+          .maybeSingle(); // اینجا هم maybeSingle میگذاریم برای اطمینان
 
         if (error) throw error;
         finalUser = data;
       } else {
-        // 🆕 سناریو ۲: کاربر کاملاً جدید است
-        console.log("کاربر جدید. ایجاد حساب...");
-
+        // 🆕 کاربر نیست -> ساخت جدید
+        console.log("کاربر جدید. ثبت نام...");
         const { data, error } = await supabase
           .from("profiles")
           .insert({
@@ -382,18 +475,17 @@ export default function Login() {
             first_name: "کاربر جدید",
           })
           .select()
-          .single();
+          .single(); // در اینسرت single اوکی است چون حتما میسازد
 
         if (error) throw error;
         finalUser = data;
       }
 
-      // پایان موفقیت‌آمیز
-      alert("✅ شماره تایید شد: " + phone);
+      alert("✅ انجام شد: " + phone);
       setUser(finalUser);
     } catch (err) {
       console.error(err);
-      alert("خطا در عملیات: " + err.message);
+      alert("خطا: " + err.message);
     } finally {
       setPhoneSaving(false);
     }
