@@ -272,6 +272,7 @@
 //     </div>
 //   );
 // }
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -354,31 +355,7 @@ export default function Login() {
     });
   };
 
-  /* -------- UI States -------- */
-
-  if (loading)
-    return <div className="p-10 text-center">در حال بارگذاری...</div>;
-
-  /* ---- Step 1: Phone Not Verified ---- */
-  if (!user?.phone_number) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
-          <h1 className="mb-4 text-xl font-bold">تأیید شماره موبایل</h1>
-
-          <button
-            onClick={requestPhone}
-            disabled={savingPhone}
-            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white disabled:bg-gray-400"
-          >
-            {savingPhone ? "در حال ذخیره..." : "ارسال شماره"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---- Step 2: Complete Profile ---- */
+  /* -------- Submit Profile -------- */
   const submitProfile = async () => {
     if (!formData.name.trim()) {
       alert("نام الزامی است");
@@ -408,11 +385,58 @@ export default function Login() {
     setSubmitting(false);
   };
 
+  /* -------- UI -------- */
+  if (loading)
+    return <div className="p-10 text-center">در حال بارگذاری...</div>;
+
+  // مرحله 1: شماره موبایل تایید نشده
+  if (!user?.phone_number) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
+          <h1 className="mb-4 text-xl font-bold">تأیید شماره موبایل</h1>
+          <button
+            onClick={requestPhone}
+            disabled={savingPhone}
+            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white disabled:bg-gray-400"
+          >
+            {savingPhone ? "در حال ذخیره..." : "ارسال شماره"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // مرحله 2: تکمیل فرم
   return (
     <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
+        {/* انتخاب نقش */}
+        <div className="mb-4 flex rounded-xl bg-gray-100 p-1">
+          <button
+            onClick={() => setRoleMode("user")}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all ${
+              roleMode === "user"
+                ? "bg-white text-cyan-800 shadow-sm"
+                : "text-gray-500"
+            }`}
+          >
+            👤 شرکت‌کننده
+          </button>
+          <button
+            onClick={() => setRoleMode("admin")}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all ${
+              roleMode === "admin"
+                ? "bg-white text-cyan-800 shadow-sm"
+                : "text-gray-500"
+            }`}
+          >
+            🎓 برگزارکننده
+          </button>
+        </div>
+
         <div className="mb-4 text-center text-sm font-bold text-green-700">
-          شماره تأیید شد: {user.phone_number}
+          شماره تأیید شد: {user.phone_number} ✅
         </div>
 
         <input
@@ -423,13 +447,12 @@ export default function Login() {
         />
 
         <input
-          placeholder="شماره دانشجویی (اختیاری)"
+          placeholder={
+            roleMode === "user" ? "شماره دانشجویی (اختیاری)" : "کد دسترسی"
+          }
           value={formData.identifier}
           onChange={(e) =>
-            setFormData({
-              ...formData,
-              identifier: toEng(e.target.value),
-            })
+            setFormData({ ...formData, identifier: toEng(e.target.value) })
           }
           className="mb-6 w-full rounded-xl border p-3 text-center"
         />
@@ -441,3 +464,173 @@ export default function Login() {
     </div>
   );
 }
+
+// import React, { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { supabase } from "../supabase";
+// import { useAuth } from "../context/AuthContext";
+// import Button from "../ui/Button";
+
+// /* ---------------- Utils ---------------- */
+// const toEng = (str = "") =>
+//   str
+//     .toString()
+//     .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+//     .replace(/\D/g, "");
+
+// const normalizePhone = (phone) => {
+//   let p = toEng(phone);
+//   if (p.startsWith("98")) p = "0" + p.slice(2);
+//   if (!p.startsWith("0")) p = "0" + p;
+//   return p;
+// };
+
+// /* --------------------------------------- */
+
+// export default function Login() {
+//   const navigate = useNavigate();
+//   const { user, setUser, loading } = useAuth();
+
+//   const [roleMode, setRoleMode] = useState("user");
+//   const [formData, setFormData] = useState({ name: "", identifier: "" });
+//   const [savingPhone, setSavingPhone] = useState(false);
+//   const [submitting, setSubmitting] = useState(false);
+
+//   /* -------- Save Phone (Core Identity) -------- */
+//   const savePhoneNumber = async (rawData) => {
+//     try {
+//       setSavingPhone(true);
+
+//       const phone =
+//         rawData?.responseUnsafe?.contact?.phone ||
+//         rawData?.contact?.phone ||
+//         rawData?.phone_number;
+
+//       if (!phone) throw new Error("شماره معتبر دریافت نشد");
+
+//       const normalizedPhone = normalizePhone(phone);
+
+//       const { data, error } = await supabase
+//         .from("profiles")
+//         .upsert(
+//           {
+//             phone_number: normalizedPhone,
+//             eitaa_id: rawData?.user?.id || null,
+//           },
+//           { onConflict: "phone_number" },
+//         )
+//         .select()
+//         .single();
+
+//       if (error) throw error;
+
+//       setUser(data);
+//     } catch (err) {
+//       alert(err.message);
+//     } finally {
+//       setSavingPhone(false);
+//     }
+//   };
+
+//   /* -------- Request Phone from Eitaa -------- */
+//   const requestPhone = (e) => {
+//     e.preventDefault();
+//     const app = window.Eitaa?.WebApp;
+
+//     if (!app?.requestContact) {
+//       alert("محیط ایتا شناسایی نشد");
+//       return;
+//     }
+
+//     app.requestContact((shared, data) => {
+//       if (shared) savePhoneNumber(data);
+//     });
+//   };
+
+//   /* -------- UI States -------- */
+
+//   if (loading)
+//     return <div className="p-10 text-center">در حال بارگذاری...</div>;
+
+//   /* ---- Step 1: Phone Not Verified ---- */
+//   if (!user?.phone_number) {
+//     return (
+//       <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
+//         <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
+//           <h1 className="mb-4 text-xl font-bold">تأیید شماره موبایل</h1>
+
+//           <button
+//             onClick={requestPhone}
+//             disabled={savingPhone}
+//             className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white disabled:bg-gray-400"
+//           >
+//             {savingPhone ? "در حال ذخیره..." : "ارسال شماره"}
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   /* ---- Step 2: Complete Profile ---- */
+//   const submitProfile = async () => {
+//     if (!formData.name.trim()) {
+//       alert("نام الزامی است");
+//       return;
+//     }
+
+//     setSubmitting(true);
+
+//     const { data, error } = await supabase
+//       .from("profiles")
+//       .update({
+//         first_name: formData.name,
+//         role: roleMode,
+//         student_id: roleMode === "user" ? formData.identifier || null : null,
+//       })
+//       .eq("phone_number", user.phone_number)
+//       .select()
+//       .single();
+
+//     if (!error) {
+//       setUser(data);
+//       navigate("/dashboard");
+//     } else {
+//       alert(error.message);
+//     }
+
+//     setSubmitting(false);
+//   };
+
+//   return (
+//     <div className="flex h-screen items-center justify-center bg-gray-50 p-6">
+//       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
+//         <div className="mb-4 text-center text-sm font-bold text-green-700">
+//           شماره تأیید شد: {user.phone_number}
+//         </div>
+
+//         <input
+//           placeholder="نام نمایشی"
+//           value={formData.name}
+//           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//           className="mb-4 w-full rounded-xl border p-3 text-center"
+//         />
+
+//         <input
+//           placeholder="شماره دانشجویی (اختیاری)"
+//           value={formData.identifier}
+//           onChange={(e) =>
+//             setFormData({
+//               ...formData,
+//               identifier: toEng(e.target.value),
+//             })
+//           }
+//           className="mb-6 w-full rounded-xl border p-3 text-center"
+//         />
+
+//         <Button handleClick={submitProfile} className="w-full">
+//           {submitting ? "در حال ورود..." : "تأیید و ادامه"}
+//         </Button>
+//       </div>
+//     </div>
+//   );
+// }
