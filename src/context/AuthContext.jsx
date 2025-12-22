@@ -16,7 +16,8 @@ export function AuthProvider({ children }) {
       } else {
         // ✅ الان اینو بذار (یک عدد جدید که تو دیتابیس نیست):
         // یا هر بار دستی تغییرش بده، یا رندوم بذار:
-        const id = app?.initDataUnsafe?.user.id;
+        const user = JSON.parse(app?.initDataUnsafe?.user);
+        const id = user.id;
         // const randomId = Math.floor(Math.random() * 1000000);
         await checkUserInDb(id);
       }
