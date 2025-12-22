@@ -6,38 +6,19 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const app = window.Eitaa?.WebApp;
   useEffect(() => {
-    // const initAuth = async () => {
-    //   // 1. Check Eitaa Environment
-    //   if (window.eitaa?.initDataUnsafe?.user) {
-    //     const eitaaUser = window.eitaa.initDataUnsafe.user;
-    //     await checkUserInDb(eitaaUser.id);
-    //   } else {
-    //     // ⚠️ حالت تست لوکال (چون ایتا نیست)
-    //     // اینجا باید دستی یک آیدی وارد کنی که توی دیتابیس داریش
-    //     // یا اگر میخوای حالت "کاربر جدید" رو تست کنی، آیدی جدید بده
-    //     console.warn("Local Dev Mode");
-    //     await checkUserInDb(123456789);
-    //   }
-    // };
-
     const initAuth = async () => {
       // 1. چک میکنیم آیا توی محیط ایتا هستیم؟
       if (window.eitaa && window.eitaa.initDataUnsafe?.user) {
         const eitaaUser = window.eitaa.initDataUnsafe.user;
         await checkUserInDb(eitaaUser.id);
       } else {
-        // --- حالت تست (مرورگر کامپیوتر) ---
-        console.warn("⚠️ محیط تست: استفاده از کاربر فیک");
-
-        // ❌ قبلا این بود:
-        // await checkUserInDb(123456789);
-
         // ✅ الان اینو بذار (یک عدد جدید که تو دیتابیس نیست):
         // یا هر بار دستی تغییرش بده، یا رندوم بذار:
-        const randomId = Math.floor(Math.random() * 1000000);
-        await checkUserInDb(randomId);
+        const id = app.WebAppUser.id;
+        // const randomId = Math.floor(Math.random() * 1000000);
+        await checkUserInDb(id);
       }
     };
     initAuth();
