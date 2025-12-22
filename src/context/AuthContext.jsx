@@ -6,45 +6,68 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const app = window.Eitaa?.WebApp;
+
   useEffect(() => {
+    // تابعی که همان اول اجرا می‌شود تا ببیند کاربر کیست
     const initAuth = async () => {
-      // 1. چک میکنیم آیا توی محیط ایتا هستیم؟
-      if (window.eitaa && window.eitaa.initDataUnsafe?.user) {
-        const eitaaUser = window.eitaa.initDataUnsafe.user;
-        await checkUserInDb(eitaaUser.id);
-      } else {
-        // ✅ الان اینو بذار (یک عدد جدید که تو دیتابیس نیست):
-        // یا هر بار دستی تغییرش بده، یا رندوم بذار:
-        const user = JSON.parse(app?.initDataUnsafe?.user);
-        const id = user.id;
-        // const randomId = Math.floor(Math.random() * 1000000);
-        await checkUserInDb(id);
+      try {
+        let eitaaId = null;
+
+        // 1. جستجوی امن برای پیدا کردن آبجکت WebApp
+        // (هم Eitaa و هم Telegram را چک می‌کنیم)
+        const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
+
+        // 2. استخراج آیدی کاربر به روش امن (بدون Destructuring که ارور ندهد)
+        // این خط می‌گوید: اگر app بود، و initDataUnsafe بود، و user بود، آنوقت id را بده
+        if (app?.initDataUnsafe?.user?.id) {
+          eitaaId = app.initDataUnsafe.user.id;
+          console.log("✅ کاربر ایتا شناسایی شد:", eitaaId);
+        }
+
+        // 3. تصمیم‌گیری
+        if (eitaaId) {
+          // اگر آیدی واقعی پیدا شد، همان را چک کن
+          await checkUserInDb(eitaaId);
+        } else {
+          // اگر پیدا نشد (مثلاً در مرورگر کامپیوتر هستی)
+          console.warn("⚠️ محیط ایتا نیست. استفاده از آیدی تست.");
+          // یک آیدی فیک یا آیدی خودت را بگذار برای تست
+          await checkUserInDb(65519322);
+        }
+      } catch (error) {
+        console.error("❌ خطای غیرمنتظره در initAuth:", error);
+        setLoading(false);
       }
     };
+
     initAuth();
   }, []);
 
-  const checkUserInDb = async (eitaaId) => {
+  // تابع چک کردن کاربر در دیتابیس Supabase
+  const checkUserInDb = async (id) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("eitaa_id", eitaaId)
-        .maybeSingle();
+        .eq("eitaa_id", id)
+        .maybeSingle(); // maybeSingle عالیه چون اگه نباشه ارور نمیده، null میده
+
+      if (error) {
+        console.error("خطای دیتابیس:", error.message);
+      }
 
       if (data) {
-        // کاربر پیدا شد (چه شماره داشته باشه چه نداشته باشه)
-        // صفحه Login تصمیم میگیره راهش بده یا نه
+        // کاربر قدیمی است (قبلاً ثبت شده)
         setUser(data);
       } else {
-        // کاربر اصلا توی جدول نیست (یعنی ربات هم استارت نکرده)
-        // ما یک آبجکت موقت میسازیم که فقط آیدی داره
-        setUser({ eitaa_id: eitaaId, phone_number: null });
+        // کاربر جدید است (هنوز شماره نداده)
+        // یک یوزر موقت میسازیم که برنامه بدونه این آیدی وجود داره
+        setUser({ eitaa_id: id, phone_number: null, isNew: true });
       }
     } catch (err) {
-      console.error(err);
+      console.error("CheckUser Error:", err);
     } finally {
+      // در هر صورت لودینگ را خاموش کن تا صفحه نمایش داده شود
       setLoading(false);
     }
   };
