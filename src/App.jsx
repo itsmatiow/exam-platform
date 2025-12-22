@@ -22,7 +22,14 @@ export default function App() {
         {/* --- مسیرهای عمومی (Public) --- */}
         {/* صفحه خانه و لاگین نیاز به نگهبان ندارن */}
         <Route path="/" element={<Home />} />
-        <Route path="/landing" element={<Landing />} />
+        <Route
+          path="/landing"
+          element={
+            <ProtectedRoute>
+              <Landing />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/login" element={<Login />} />
 
