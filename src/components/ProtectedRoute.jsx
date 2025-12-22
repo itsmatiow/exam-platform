@@ -11,7 +11,6 @@ export default function ProtectedRoute({ children }) {
 
   // ۲. شرط ورود ساده شد:
   // فقط اگر "یوزر نیست" یا "شماره موبایل نداره" بفرستش بیرون.
-  // (شرط student_id و isNew رو حذف کردم چون دیگه فرم ثبت نام نداریم)
   if (!user || !user.phone_number) {
     return <Navigate to="/login" replace />;
   }

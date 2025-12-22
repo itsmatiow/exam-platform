@@ -1,21 +1,3 @@
-// import React from "react";
-// import { Routes, Route } from "react-router-dom";
-// import Home from "./pages/Home";
-// import CreateTest from "./pages/CreateTest";
-// import Result from "./pages/Result";
-// import Test from "./pages/Test";
-// import Dashboard from "./pages/Dashboard";
-// export default function App() {
-//   return (
-//     <Routes>
-//       <Route path="/" element={<Home />} />
-//       <Route path="/create" element={<CreateTest />} />
-//       <Route path="/dashboard" element={<Dashboard />} />
-//       <Route path="/result" element={<Result />} />
-//       <Route path="/test/:id" element={<Test />} />
-//     </Routes>
-//   );
-// }
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -30,6 +12,7 @@ import CreateTest from "./pages/CreateTest";
 import Dashboard from "./pages/Dashboard";
 import Test from "./pages/Test";
 import Result from "./pages/Result";
+import Landing from "./pages/Landing";
 
 export default function App() {
   return (
@@ -39,6 +22,8 @@ export default function App() {
         {/* --- مسیرهای عمومی (Public) --- */}
         {/* صفحه خانه و لاگین نیاز به نگهبان ندارن */}
         <Route path="/" element={<Home />} />
+        <Route path="/landing" element={<Landing />} />
+
         <Route path="/login" element={<Login />} />
 
         {/* --- مسیرهای محافظت‌شده (Private) --- */}
