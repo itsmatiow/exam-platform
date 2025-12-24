@@ -85,8 +85,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import Home from "./pages/Home"; // همان کدی که بالا دادم
-import Landing from "./pages/Landing"; // صفحه لندینگ شما
+import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import CreateTest from "./pages/CreateTest";
 import Dashboard from "./pages/Dashboard";
 import Test from "./pages/Test";

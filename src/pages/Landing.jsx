@@ -4,9 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function Landing() {
   const navigate = useNavigate();
-  //https://exam-platform-gold.vercel.app/
   return (
-    <div className="flex h-screen flex-col justify-between">
+    <div className="flex h-screen flex-col justify-between bg-gray-50">
       <div className="flex h-200 flex-col items-center justify-center">
         <h1 className="mb-12 text-center text-3xl font-bold">
           پلتفرم <span className="text-red-500">آ</span>زمون{" "}
@@ -19,14 +18,12 @@ export default function Landing() {
               navigate("/create");
             }}
           >
-            ساخت آزمون جدید
+            آزمون جدید
           </Button>
-          <Button handleClick={() => navigate("/dashboard")}>
-            تاریخچه آزمون‌ها
-          </Button>
+          <Button handleClick={() => navigate("/dashboard")}>پنل کاربری</Button>
         </div>
       </div>
-      <h2 className="mx-auto mb-8 flex text-center select-none">
+      <h2 className="mx-auto mb-12 flex text-center select-none">
         طراحی شده با چای
         <img
           className="mx-1 h-6 w-6"

@@ -1,29 +1,3 @@
-// import React from "react";
-// import Button from "../ui/Button";
-// import { useNavigate } from "react-router-dom";
-
-// export default function Home() {
-//   const navigate = useNavigate();
-
-//   return (
-//     <div className="mt-70 flex flex-col items-center justify-center">
-//       <h1 className="text-3xl font-black">سلام!</h1>
-//       <p className="mx-4 mt-8 text-center text-xl font-semibold">
-//         ما برای ثبت هویت شما در آزمون‌ها، <br />
-//         به شماره همراهتون نیاز داریم. <br />
-//         لطفا با ما به اشتراک بذارید...
-//       </p>
-//       <Button
-//         className="mt-8 text-2xl"
-//         handleClick={() => {
-//           navigate("/landing");
-//         }}
-//       >
-//         اشتراک گذاری
-//       </Button>
-//     </div>
-//   );
-// }
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -48,20 +22,19 @@ export default function Home() {
   const { user, setUser, loading } = useAuth();
   const [saving, setSaving] = useState(false);
 
-  // 🔴 متغیر برای ذخیره پیام خطا (سناریو ۲)
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 🚀 سناریو ۳: اگر کاربر قبلاً لاگین کرده، مستقیم برو لندینگ
+  //redirect if already logged in
   useEffect(() => {
     if (!loading && user?.phone_number) {
       navigate("/landing", { replace: true });
     }
   }, [user, loading, navigate]);
 
-  // --- منطق ذخیره شماره ---
+  //save phone number to supabase
   const savePhoneNumber = async (rawData) => {
     setSaving(true);
-    setErrorMsg(""); // پاک کردن ارورهای قبلی
+    setErrorMsg("");
     try {
       const phone =
         rawData?.responseUnsafe?.contact?.phone ||
@@ -73,7 +46,7 @@ export default function Home() {
       const finalPhone = normalizePhone(phone);
       const eitaaId = rawData?.user?.id || user?.eitaa_id;
 
-      // جستجو در دیتابیس
+      //search in database
       const { data: existing } = await supabase
         .from("profiles")
         .select("*")
@@ -82,7 +55,7 @@ export default function Home() {
 
       let finalUser = null;
       if (existing) {
-        // آپدیت آیدی ایتا (سینک کردن)
+        //update eitaa id if missing or changed
         const { data, error } = await supabase
           .from("profiles")
           .update({ eitaa_id: eitaaId })
@@ -92,7 +65,7 @@ export default function Home() {
         if (error) throw error;
         finalUser = data;
       } else {
-        // ثبت نام جدید (سناریو ۱)
+        // sign up new user
         const { data, error } = await supabase
           .from("profiles")
           .insert({ phone_number: finalPhone, eitaa_id: eitaaId, role: "user" })
@@ -103,7 +76,6 @@ export default function Home() {
       }
 
       setUser(finalUser);
-      // نکته: با تغییر setUser، اون useEffect بالا خودکار اجرا میشه و میبره به لندینگ
     } catch (err) {
       setErrorMsg("خطا در ذخیره اطلاعات: " + err.message);
     } finally {
@@ -112,16 +84,14 @@ export default function Home() {
   };
 
   const handleShareClick = () => {
-    setErrorMsg(""); // ریست کردن ارور هنگام کلیک جدید
+    setErrorMsg("");
     const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
 
     if (app?.requestContact) {
       app.requestContact((shared, data) => {
         if (shared) {
-          // کاربر قبول کرد -> ذخیره کن
           savePhoneNumber(data);
         } else {
-          // ⚠️ سناریو ۲: کاربر لغو کرد -> نمایش پیام خطا
           setSaving(false);
           setErrorMsg(
             "برای ادامه کار با ربات، اشتراک‌گذاری شماره الزامی است ⚠️",
@@ -129,14 +99,13 @@ export default function Home() {
         }
       });
     } else {
-      // فال‌بک برای تست
+      // fallback for testing in browser
       window.Eitaa?.WebView?.postEvent("web_app_request_phone", false, "");
     }
   };
 
-  // --- رندر ---
+  //rendering
 
-  // اگر هنوز وضعیت مشخص نیست
   if (loading)
     return (
       <div className="flex h-screen items-center justify-center text-gray-500">
@@ -144,7 +113,6 @@ export default function Home() {
       </div>
     );
 
-  // اگر لاگین است (جهت جلوگیری از پرش تصویر قبل از ریدایرکت)
   if (user?.phone_number)
     return (
       <div className="flex h-screen items-center justify-center font-bold text-green-600">
@@ -152,7 +120,6 @@ export default function Home() {
       </div>
     );
 
-  // صفحه اصلی (برای کاربر جدید یا لاگین نشده)
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm text-center">
@@ -164,7 +131,6 @@ export default function Home() {
           لطفا با ما به اشتراک بذارید...
         </p>
 
-        {/* 🔥 محل نمایش پیام خطا (سناریو ۲) */}
         {errorMsg && (
           <div className="mb-4 animate-pulse rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-600">
             {errorMsg}
