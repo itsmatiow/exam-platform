@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Button from "../ui/Button";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import Swal from "sweetalert2";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -58,29 +59,160 @@ export default function Dashboard() {
   };
 
   // --- New: Delete Function ---
-  const deleteTest = async (testId) => {
-    // 1. Ask for confirmation
-    if (
-      !window.confirm(
-        "آیا از حذف این آزمون مطمئن هستید؟ این عملیات قابل برگشت نیست.",
-      )
-    ) {
-      return;
-    }
+  //   const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
+  //   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+  // </svg>
+  // `;
 
-    try {
-      // 2. Delete from Supabase
-      const { error } = await supabase.from("tests").delete().eq("id", testId);
+  //   const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
+  //   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  // </svg>
 
-      if (error) throw error;
+  // `;
+  //   const deleteTest = async (testId) => {
+  //     // 1. Ask for confirmation
+  //     // if (
+  //     //   !window.confirm(
+  //     //     "آیا از حذف این آزمون مطمئن هستید؟ این عملیات قابل برگشت نیست.",
+  //     //   )
+  //     // ) {
+  //     //   return;
+  //     // }
 
-      // 3. Update local state to remove the item from UI
-      setTests((prevTests) => prevTests.filter((t) => t.id !== testId));
-      alert("آزمون با موفقیت حذف شد.");
-    } catch (error) {
-      console.error("Error deleting test:", error);
-      alert("خطا در حذف آزمون: " + error.message);
-    }
+  //     // try {
+  //     //   // 2. Delete from Supabase
+  //     //   const { error } = await supabase.from("tests").delete().eq("id", testId);
+
+  //     //   if (error) throw error;
+
+  //     //   // 3. Update local state to remove the item from UI
+  //     //   setTests((prevTests) => prevTests.filter((t) => t.id !== testId));
+  //     //   alert("آزمون با موفقیت حذف شد.");
+  //     // } catch (error) {
+  //     //   console.error("Error deleting test:", error);
+  //     //   alert("خطا در حذف آزمون: " + error.message);
+  //     // }
+
+  //     Swal.fire({
+  //       title: "آیا از حذف این آزمون مطمئن هستید؟",
+  //       text: "این عملیات قابل برگشت نیست.",
+  //       showCancelButton: true,
+  //       cancelButtonText: "انصراف",
+  //       confirmButtonText: "حذف آزمون",
+  //       iconHtml: warningIcon,
+  //       customClass: {
+  //         icon: "text-amber-400",
+  //       },
+  //       didOpen: () => {
+  //         const icon = Swal.getIcon();
+  //         if (icon) {
+  //           icon.style.border = "none";
+  //           icon.style.background = "transparent";
+  //         }
+  //       },
+  //       confirmButtonColor: "#3085d6",
+  //       cancelButtonColor: "#d33",
+  //     }).then((result) => {
+  //       if (result.isConfirmed) {
+  //         Swal.fire({
+  //           title: "آزمون حذف شد!",
+  //           iconHtml: checkIcon,
+  //           customClass: {
+  //             icon: "text-green-500",
+  //           },
+  //           didOpen: () => {
+  //             const icon = Swal.getIcon();
+  //             if (icon) {
+  //               icon.style.border = "none";
+  //               icon.style.background = "transparent";
+  //             }
+  //           },
+  //           confirmButtonText: "تایید",
+  //         });
+  //       }
+  //     });
+  //   };
+  // تعریف آیکون‌ها بیرون از تابع یا داخل کامپوننت (برای تمیزی کد)
+  const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+</svg>`;
+
+  const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg>`;
+
+  // --- تابع حذف با SweetAlert و Supabase ---
+  const deleteTest = (testId) => {
+    Swal.fire({
+      title: "آیا از حذف این آزمون مطمئن هستید؟",
+      text: "این عملیات قابل برگشت نیست.",
+      showCancelButton: true,
+      cancelButtonText: "انصراف",
+      confirmButtonText: "بله، حذف کن",
+      iconHtml: warningIcon,
+      customClass: {
+        icon: "text-amber-400",
+      },
+      // ✅ این خط دکمه را موقع لودینگ غیرفعال می‌کند و اسپینر نشان می‌دهد
+      showLoaderOnConfirm: true,
+
+      didOpen: () => {
+        const icon = Swal.getIcon();
+        if (icon) {
+          icon.style.border = "none";
+          icon.style.background = "transparent";
+        }
+      },
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+
+      // ✅ جادوی اصلی اینجاست: عملیات دیتابیس را قبل از بستن مدال انجام می‌دهیم
+      preConfirm: async () => {
+        try {
+          // 1. تلاش برای حذف از دیتابیس
+          const { error } = await supabase
+            .from("tests")
+            .delete()
+            .eq("id", testId);
+
+          if (error) {
+            // اگر ارور داد، همینجا به کاربر نشان میده و مدال بسته نمیشه
+            Swal.showValidationMessage(`خطا در حذف: ${error.message}`);
+            return false; // عملیات ناموفق
+          }
+
+          return true; // عملیات موفق
+        } catch (error) {
+          Swal.showValidationMessage(`Request failed: ${error}`);
+          return false;
+        }
+      },
+      // اگر کاربر خارج از کادر کلیک کرد، لودینگ قطع نشه
+      allowOutsideClick: () => !Swal.isLoading(),
+    }).then((result) => {
+      // ✅ فقط زمانی که عملیات دیتابیس (preConfirm) موفق بود وارد اینجا میشه
+      if (result.isConfirmed && result.value === true) {
+        // 2. آپدیت استیت (UI) - چون دیتابیس پاک شده، حالا از صفحه هم پاک میکنیم
+        setTests((prevTests) => prevTests.filter((t) => t.id !== testId));
+
+        // 3. نمایش پیام موفقیت (بلافاصله بعد از لودینگ)
+        Swal.fire({
+          title: "آزمون حذف شد!",
+          iconHtml: checkIcon,
+          customClass: {
+            icon: "text-green-500",
+          },
+          didOpen: () => {
+            const icon = Swal.getIcon();
+            if (icon) {
+              icon.style.border = "none";
+              icon.style.background = "transparent";
+            }
+          },
+          confirmButtonText: "تایید",
+        });
+      }
+    });
   };
 
   useEffect(() => {
