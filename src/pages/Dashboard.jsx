@@ -7,9 +7,7 @@ import BackButton from "../components/BackButton";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(
-    user?.role === "admin" ? "created" : "taken",
-  );
+  const [activeTab, setActiveTab] = useState("created");
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -229,8 +227,19 @@ export default function Dashboard() {
                 {/* Copy Link Button */}
                 <Button
                   className="group relative flex-1 overflow-hidden !py-2 text-base !font-bold"
+                  // handleClick={() => {
+                  //   const link = `${window.location.origin}/test/${test.id}`;
+                  //   navigator.clipboard.writeText(link);
+                  //   alert("لینک آزمون کپی شد!");
+                  // }}
+                  // ... (داخل دکمه کپی لینک)
                   handleClick={() => {
-                    const link = `${window.location.origin}/test/${test.id}`;
+                    const botUsername = "MyExamBot"; // 👈 نام ربات
+                    const appName = "app";
+
+                    // ساخت لینک با پارامتر startapp
+                    const link = `https://eitaa.com/${botUsername}/${appName}?startapp=${test.id}`;
+
                     navigator.clipboard.writeText(link);
                     alert("لینک آزمون کپی شد!");
                   }}

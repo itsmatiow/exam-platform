@@ -21,15 +21,31 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, setUser, loading } = useAuth();
   const [saving, setSaving] = useState(false);
-
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [targetTestId, setTargetTestId] = useState(null);
+
+  useEffect(() => {
+    // ۱. بررسی کنیم آیا با لینک مستقیم (Deep Link) وارد شده؟
+    const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
+    const startParam = app?.initDataUnsafe?.start_param;
+
+    if (startParam) {
+      console.log("ورود با لینک آزمون:", startParam);
+      setTargetTestId(startParam); // آیدی رو نگه دار
+    }
+  }, []);
 
   //redirect if already logged in
   useEffect(() => {
     if (!loading && user?.phone_number) {
-      navigate("/landing", { replace: true });
+      if (targetTestId) {
+        navigate(`/test/${targetTestId}`, { replace: true });
+      } else {
+        navigate("/landing", { replace: true });
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, targetTestId]);
 
   //save phone number to supabase
   const savePhoneNumber = async (rawData) => {
