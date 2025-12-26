@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext";
 import Button from "../ui/Button";
 import Question from "../ui/Question";
 import Switch from "../ui/Switch";
@@ -15,6 +16,8 @@ const toEng = (str) =>
 
 export default function CreateTest() {
   // --- 1. State Management ---
+  const { user } = useAuth();
+
   const [test, setTest] = useState({
     title: "",
     description: "",
@@ -183,6 +186,7 @@ export default function CreateTest() {
         start_time: test.start,
         end_time: finalEndTime,
         reviewable: test.reviewable,
+        created_by: user.eitaa_id,
       })
       .select()
       .single();

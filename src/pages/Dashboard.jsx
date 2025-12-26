@@ -15,12 +15,16 @@ export default function Dashboard() {
 
   // --- Fetching Logic (Same as before) ---
   const fetchCreatedTests = async () => {
+    if (!user?.eitaa_id) return;
+
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("tests")
         .select("*")
+        .eq("created_by", user.eitaa_id)
         .order("created_at", { ascending: false });
+
       if (error) throw error;
       setTests(data);
     } catch (error) {
@@ -59,80 +63,6 @@ export default function Dashboard() {
     }
   };
 
-  // --- New: Delete Function ---
-  //   const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
-  //   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-  // </svg>
-  // `;
-
-  //   const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
-  //   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-  // </svg>
-
-  // `;
-  //   const deleteTest = async (testId) => {
-  //     // 1. Ask for confirmation
-  //     // if (
-  //     //   !window.confirm(
-  //     //     "آیا از حذف این آزمون مطمئن هستید؟ این عملیات قابل برگشت نیست.",
-  //     //   )
-  //     // ) {
-  //     //   return;
-  //     // }
-
-  //     // try {
-  //     //   // 2. Delete from Supabase
-  //     //   const { error } = await supabase.from("tests").delete().eq("id", testId);
-
-  //     //   if (error) throw error;
-
-  //     //   // 3. Update local state to remove the item from UI
-  //     //   setTests((prevTests) => prevTests.filter((t) => t.id !== testId));
-  //     //   alert("آزمون با موفقیت حذف شد.");
-  //     // } catch (error) {
-  //     //   console.error("Error deleting test:", error);
-  //     //   alert("خطا در حذف آزمون: " + error.message);
-  //     // }
-
-  //     Swal.fire({
-  //       title: "آیا از حذف این آزمون مطمئن هستید؟",
-  //       text: "این عملیات قابل برگشت نیست.",
-  //       showCancelButton: true,
-  //       cancelButtonText: "انصراف",
-  //       confirmButtonText: "حذف آزمون",
-  //       iconHtml: warningIcon,
-  //       customClass: {
-  //         icon: "text-amber-400",
-  //       },
-  //       didOpen: () => {
-  //         const icon = Swal.getIcon();
-  //         if (icon) {
-  //           icon.style.border = "none";
-  //           icon.style.background = "transparent";
-  //         }
-  //       },
-  //       confirmButtonColor: "#3085d6",
-  //       cancelButtonColor: "#d33",
-  //     }).then((result) => {
-  //       if (result.isConfirmed) {
-  //         Swal.fire({
-  //           title: "آزمون حذف شد!",
-  //           iconHtml: checkIcon,
-  //           customClass: {
-  //             icon: "text-green-500",
-  //           },
-  //           didOpen: () => {
-  //             const icon = Swal.getIcon();
-  //             if (icon) {
-  //               icon.style.border = "none";
-  //               icon.style.background = "transparent";
-  //             }
-  //           },
-  //           confirmButtonText: "تایید",
-  //         });
-  //       }
-  //     });
-  //   };
   // تعریف آیکون‌ها بیرون از تابع یا داخل کامپوننت (برای تمیزی کد)
   const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-28">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
