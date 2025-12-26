@@ -3,6 +3,7 @@ import Button from "../ui/Button";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import Swal from "sweetalert2";
+import BackButton from "../components/BackButton";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -223,6 +224,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-8">
+      <div className="m-4 flex justify-end">
+        <BackButton />
+      </div>
       {/* --- Tab Buttons --- */}
       <div className="m-4 flex items-center justify-around gap-2 rounded-2xl bg-cyan-700 p-4 shadow-inner max-md:flex-col">
         <Button

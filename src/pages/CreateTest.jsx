@@ -5,6 +5,7 @@ import Question from "../ui/Question";
 import Switch from "../ui/Switch";
 import DatePicker from "../components/DatePicker.jsx";
 import jalaali from "jalaali-js";
+import BackButton from "../components/BackButton.jsx";
 
 // --- Helper Functions ---
 
@@ -230,9 +231,10 @@ export default function CreateTest() {
   return (
     <div className="bg-gray-200 p-4 pb-8">
       <div className="rounded-lg bg-white px-2 shadow-md">
-        <h1 className="pt-6 text-center text-2xl font-black">
-          ایجاد آزمون جدید
-        </h1>
+        <div className="flex justify-between px-4 pt-4">
+          <h1 className="pt-6 text-center text-2xl font-black">آزمون جدید</h1>
+          <BackButton className="mt-4" />
+        </div>
         <form className="flex flex-col p-4" action="">
           {/* Title Input */}
           <label className="mt-2 text-lg font-semibold">نام آزمون:</label>

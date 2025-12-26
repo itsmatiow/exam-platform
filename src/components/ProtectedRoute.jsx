@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
 
   // ۱. صبر برای لود شدن
   if (loading) {
-    return <div className="p-10 text-center">درحال بررسی هویت...</div>;
+    return <div className="p-10 text-center">درحال بارگذاری...</div>;
   }
 
   // ۲. شرط ورود ساده شد:
