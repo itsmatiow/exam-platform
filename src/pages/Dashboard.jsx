@@ -318,13 +318,15 @@ export default function Dashboard() {
                   </span>
                 </Button>
 
-                <Button
-                  className="flex-1 border border-cyan-300 !bg-cyan-100 !py-2 text-base !font-bold !text-cyan-800 hover:!bg-cyan-200"
-                  handleClick={() => showResults(test.id, test.title)}
-                >
-                  📊 نتایج ({test.participant_count || "مشاهده"})
-                  {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
-                </Button>
+                {activeTab === "created" && (
+                  <Button
+                    className="flex-1 border border-cyan-300 !bg-cyan-100 !py-2 text-base !font-bold !text-cyan-800 hover:!bg-cyan-200"
+                    handleClick={() => showResults(test.id, test.title)}
+                  >
+                    📊 نتایج ({test.participant_count || "مشاهده"})
+                    {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
+                  </Button>
+                )}
 
                 {/* Delete Button - Only shown in 'Created' tab */}
                 {activeTab === "created" && (
