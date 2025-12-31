@@ -5,6 +5,9 @@ import { useAuth } from "../context/AuthContext";
 import Swal from "sweetalert2";
 import BackButton from "../components/BackButton";
 
+const toEng = (str) =>
+  String(str).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("created");
@@ -287,21 +290,6 @@ export default function Dashboard() {
 
               {/* Action Buttons Row */}
               <div className="col-span-2 mt-2 flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="flex-1 border border-cyan-300 !bg-cyan-100 !py-2 text-base !font-bold !text-cyan-800 hover:!bg-cyan-200"
-                  handleClick={() => showResults(test.id, test.title)}
-                >
-                  📊 نتایج ({test.participant_count || "مشاهده"})
-                  {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
-                </Button>
-
-                {/* دکمه حذف (قبلی) */}
-                <Button
-                  className="flex-1 border border-red-200 !bg-red-100 !py-2 text-base !font-bold !text-red-600 hover:!bg-red-200"
-                  handleClick={() => deleteTest(test.id)}
-                >
-                  حذف 🗑️
-                </Button>
                 {/* Copy Link Button */}
                 <Button
                   className="group relative flex-1 overflow-hidden !py-2 text-base !font-bold"
@@ -328,6 +316,14 @@ export default function Dashboard() {
                   <span className="absolute inset-0 hidden items-center justify-center text-sm [direction:ltr] group-hover:flex">
                     کپی شد! ✅
                   </span>
+                </Button>
+
+                <Button
+                  className="flex-1 border border-cyan-300 !bg-cyan-100 !py-2 text-base !font-bold !text-cyan-800 hover:!bg-cyan-200"
+                  handleClick={() => showResults(test.id, test.title)}
+                >
+                  📊 نتایج ({test.participant_count || "مشاهده"})
+                  {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
                 </Button>
 
                 {/* Delete Button - Only shown in 'Created' tab */}
