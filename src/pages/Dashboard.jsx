@@ -70,6 +70,69 @@ export default function Dashboard() {
   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
 </svg>`;
 
+  const showResults = async (testId, testTitle) => {
+    Swal.fire({
+      title: "درحال دریافت نتایج...",
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      // دریافت نتایج از دیتابیس
+      const { data, error } = await supabase
+        .from("results")
+        .select("student_name, student_id, score_percentage, created_at")
+        .eq("test_id", testId)
+        .order("score_percentage", { ascending: false }); // مرتب سازی بر اساس نمره
+
+      if (error) throw error;
+
+      if (data.length === 0) {
+        Swal.fire("هنوز کسی شرکت نکرده!", "", "info");
+        return;
+      }
+
+      // ساخت جدول HTML برای نمایش در آلرت
+      let tableHtml = `
+            <div style="overflow-x: auto;">
+                <table style="width:100%; text-align: right; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #f3f4f6; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 8px;">نام</th>
+                            <th style="padding: 8px;">ش.دانشجویی</th>
+                            <th style="padding: 8px;">نمره</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data
+                          .map(
+                            (row) => `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 8px;">${row.student_name || "بی‌نام"}</td>
+                                <td style="padding: 8px;">${row.student_id ? toEng(row.student_id) : "-"}</td>
+                                <td style="padding: 8px; font-weight: bold; color: ${row.score_percentage >= 50 ? "green" : "red"};">
+                                    ٪${Math.round(row.score_percentage)}
+                                </td>
+                            </tr>
+                        `,
+                          )
+                          .join("")}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+      Swal.fire({
+        title: `نتایج: ${testTitle}`,
+        html: tableHtml,
+        width: "600px",
+        confirmButtonText: "بستن",
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire("خطا در دریافت نتایج", error.message, "error");
+    }
+  };
+
   // --- تابع حذف با SweetAlert و Supabase ---
   const deleteTest = (testId) => {
     Swal.fire({
@@ -224,6 +287,21 @@ export default function Dashboard() {
 
               {/* Action Buttons Row */}
               <div className="col-span-2 mt-2 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  className="flex-1 border border-cyan-300 !bg-cyan-100 !py-2 text-base !font-bold !text-cyan-800 hover:!bg-cyan-200"
+                  handleClick={() => showResults(test.id, test.title)}
+                >
+                  📊 نتایج ({test.participant_count || "مشاهده"})
+                  {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
+                </Button>
+
+                {/* دکمه حذف (قبلی) */}
+                <Button
+                  className="flex-1 border border-red-200 !bg-red-100 !py-2 text-base !font-bold !text-red-600 hover:!bg-red-200"
+                  handleClick={() => deleteTest(test.id)}
+                >
+                  حذف 🗑️
+                </Button>
                 {/* Copy Link Button */}
                 <Button
                   className="group relative flex-1 overflow-hidden !py-2 text-base !font-bold"
