@@ -8,28 +8,24 @@
 //   const [loading, setLoading] = useState(true);
 
 //   useEffect(() => {
-//     // تابعی که همان اول اجرا می‌شود تا ببیند کاربر کیست
 //     const initAuth = async () => {
 //       try {
 //         let eitaaId = null;
 
-//         const app = window.Eitaa?.WebApp;
+//         const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
 
 //         if (app?.initDataUnsafe?.user?.id) {
 //           eitaaId = app.initDataUnsafe.user.id;
-//           console.log("✅ کاربر ایتا شناسایی شد:", eitaaId);
 //         }
 
-//         if (eitaaId) {
-//           await checkUserInDb(eitaaId);
-//         } else {
-//           // اگر پیدا نشد (مثلاً در مرورگر کامپیوتر هستی)
-//           console.warn("⚠️ محیط ایتا نیست. استفاده از آیدی تست.");
-//           // یک آیدی فیک یا آیدی خودت را بگذار برای تست
-//           await checkUserInDb(65519322);
+//         if (!eitaaId) {
+//           setUser(null);
+//           setLoading(false);
+//           return;
 //         }
-//       } catch (error) {
-//         console.error("❌ خطای غیرمنتظره در initAuth:", error);
+
+//         await checkUserInDb(eitaaId);
+//       } catch {
 //         setLoading(false);
 //       }
 //     };
@@ -37,31 +33,24 @@
 //     initAuth();
 //   }, []);
 
-//   // تابع چک کردن کاربر در دیتابیس Supabase
 //   const checkUserInDb = async (id) => {
 //     try {
-//       const { data, error } = await supabase
+//       const { data } = await supabase
 //         .from("profiles")
 //         .select("*")
 //         .eq("eitaa_id", id)
-//         .maybeSingle(); // maybeSingle عالیه چون اگه نباشه ارور نمیده، null میده
-
-//       if (error) {
-//         console.error("خطای دیتابیس:", error.message);
-//       }
+//         .maybeSingle();
 
 //       if (data) {
-//         // کاربر قدیمی است (قبلاً ثبت شده)
 //         setUser(data);
 //       } else {
-//         // کاربر جدید است (هنوز شماره نداده)
-//         // یک یوزر موقت میسازیم که برنامه بدونه این آیدی وجود داره
-//         setUser({ eitaa_id: id, phone_number: null, isNew: true });
+//         setUser({
+//           eitaa_id: id,
+//           phone_number: null,
+//           isNew: true,
+//         });
 //       }
-//     } catch (err) {
-//       console.error("CheckUser Error:", err);
 //     } finally {
-//       // در هر صورت لودینگ را خاموش کن تا صفحه نمایش داده شود
 //       setLoading(false);
 //     }
 //   };
@@ -73,7 +62,9 @@
 //   );
 // }
 
+// // eslint-disable-next-line react-refresh/only-export-components
 // export const useAuth = () => useContext(AuthContext);
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabase";
 
@@ -112,30 +103,39 @@ export function AuthProvider({ children }) {
         first_name: eitaaUser.first_name || "",
         last_name: eitaaUser.last_name || "",
         username: eitaaUser.username || "",
-        // نکته: phone_number را اینجا نمی‌نویسیم تا نال نشود
+        // phone_number را نمی‌فرستیم تا نال نشود
       };
 
+      // ۱. استفاده از upsert و گرفتن خروجی
       const { data, error } = await supabase
         .from("profiles")
-        .upsert(updates, { onConflict: "eataa_id" })
-        // .select("*")
-        // .eq("eitaa_id", id)
-        .select("*")
-        .maybeSingle();
+        .upsert(updates, { onConflict: "eitaa_id" })
+        .select(); // 👈 حذف .maybeSingle() برای رفع ارور
 
       if (error) throw error;
-      if (data && data.phone_number) {
-        setUser(data);
-      } else {
+
+      // ۲. دستی چک می‌کنیم که دیتا داریم یا نه
+      const profile = data && data.length > 0 ? data[0] : null;
+
+      if (profile && profile.phone_number) {
+        setUser(profile);
+      } else if (profile) {
+        // کاربر جدید است (شماره ندارد)
         setUser({
-          ...data,
-          // eitaa_id: eitaaUser.id,
-          // phone_number: null,
+          ...profile,
+          isNew: true,
+        });
+      } else {
+        // حالت نادر: دیتا ذخیره شد ولی برنگشت (معمولا بخاطر RLS)
+        // اینجا دستی آبجکت رو میسازیم که برنامه کرش نکنه
+        setUser({
+          ...updates,
+          phone_number: null,
           isNew: true,
         });
       }
-    } catch (err) {
-      console.error("CheckUser Error:", err);
+    } catch (error) {
+      console.error("DB Error:", error);
     } finally {
       setLoading(false);
     }
@@ -150,3 +150,80 @@ export function AuthProvider({ children }) {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
+
+// import React, { createContext, useContext, useEffect, useState } from "react";
+// import { supabase } from "../supabase";
+
+// const AuthContext = createContext();
+
+// export function AuthProvider({ children }) {
+//   const [user, setUser] = useState(null);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const initAuth = async () => {
+//       try {
+//         const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
+//         const eitaaUser = app?.initDataUnsafe?.user;
+
+//         if (!eitaaUser?.id) {
+//           setUser(null);
+//           setLoading(false);
+//           return;
+//         }
+
+//         await checkUserInDb(eitaaUser);
+//       } catch (error) {
+//         console.error("Auth Error:", error);
+//         setLoading(false);
+//       }
+//     };
+
+//     initAuth();
+//   }, []);
+
+//   const checkUserInDb = async (eitaaUser) => {
+//     try {
+//       const updates = {
+//         eitaa_id: eitaaUser.id,
+//         first_name: eitaaUser.first_name || "",
+//         last_name: eitaaUser.last_name || "",
+//         username: eitaaUser.username || "",
+//         // نکته: phone_number را اینجا نمی‌نویسیم تا نال نشود
+//       };
+
+//       const { data, error } = await supabase
+//         .from("profiles")
+//         .upsert(updates, { onConflict: "eataa_id" })
+//         // .select("*")
+//         // .eq("eitaa_id", id)
+//         .select("*")
+//         .maybeSingle();
+
+//       if (error) throw error;
+//       if (data && data.phone_number) {
+//         setUser(data);
+//       } else {
+//         setUser({
+//           ...data,
+//           // eitaa_id: eitaaUser.id,
+//           // phone_number: null,
+//           isNew: true,
+//         });
+//       }
+//     } catch (err) {
+//       console.error("CheckUser Error:", err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <AuthContext.Provider value={{ user, setUser, loading }}>
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// }
+
+// // eslint-disable-next-line react-refresh/only-export-components
+// export const useAuth = () => useContext(AuthContext);
