@@ -48,6 +48,19 @@ export default function CreateTest() {
     const finalDateStart = new Date(gy, gm - 1, gd, pHour, pMin);
 
     if (!isNaN(finalDateStart.getTime())) {
+      const now = new Date();
+
+      if (finalDateStart < new Date(now.getTime() - 60000)) {
+        Swal.fire({
+          icon: "warning",
+          title: "زمان نامعتبر",
+          text: "زمان شروع آزمون نمی‌تواند در گذشته باشد!",
+          confirmButtonText: "باشه",
+          timer: 3000,
+        });
+        return;
+      }
+
       const isoDateStart = finalDateStart.toISOString();
       setTest((prev) => ({
         ...prev,
@@ -243,7 +256,7 @@ export default function CreateTest() {
         text: error.message || "مشکلی پیش آمده است",
         icon: "error",
         draggable: true,
-        confirmButtonText: "تایید",
+        confirmButtonText: "باشه",
       });
 
       setIsSubmitting(false); // فعال کردن دوباره دکمه در صورت خطا
