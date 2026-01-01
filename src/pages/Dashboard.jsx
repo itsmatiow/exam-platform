@@ -346,7 +346,10 @@ export default function Dashboard() {
                 {/* Show Score for Taken Tests */}
                 {activeTab === "taken" && (
                   <div className="flex-1 rounded-xl border border-green-200 bg-green-100 py-2 text-center font-bold text-green-700">
-                    نمره: {test.score ? `%${test.score}` : "ثبت نشده"}
+                    نمره:{" "}
+                    {test.score !== null && test.score !== undefined
+                      ? `٪${test.score}`
+                      : "ثبت نشده"}{" "}
                   </div>
                 )}
               </div>

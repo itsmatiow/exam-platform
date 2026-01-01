@@ -8,7 +8,8 @@ import Button from "../ui/Button";
 
 // --- Utility Functions ---
 const toFarsi = (str) => {
-  if (!str) return "";
+  // 👈 اصلاح مهم: عدد 0 نباید حذف شود
+  if (str === null || str === undefined) return "";
   const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
   return str.toString().replace(/[0-9]/g, (d) => farsiDigits[parseInt(d)]);
 };
@@ -31,10 +32,9 @@ export default function Test() {
   const [score, setScore] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 👈 استیت‌های جدید برای فرم ورود
   const [name, setname] = useState("");
   const [studentId, setStudentId] = useState("");
-  const [isInfoSubmitted, setIsInfoSubmitted] = useState(false); // آیا فرم پر شده؟
+  const [isInfoSubmitted, setIsInfoSubmitted] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ export default function Test() {
 
   const STORAGE_KEY_ANSWERS = `test_answers_${id}`;
   const STORAGE_KEY_SUBMITTED = `test_submitted_${id}`;
-  const STORAGE_KEY_INFO = `test_info_${id}`; // ذخیره موقت مشخصات
+  const STORAGE_KEY_INFO = `test_info_${id}`;
 
   const userFullName = user
     ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
@@ -59,7 +59,6 @@ export default function Test() {
         fetchTest();
         loadSavedAnswers();
 
-        // بازیابی مشخصات اگر قبلا وارد کرده و رفرش کرده
         const savedInfo = localStorage.getItem(STORAGE_KEY_INFO);
         if (savedInfo) {
           const { name, sId } = JSON.parse(savedInfo);
@@ -123,7 +122,6 @@ export default function Test() {
         confirmButtonText: "بازگشت به داشبورد",
         allowOutsideClick: false,
       }).then(() => {
-        // هدایت کاربر به داشبورد تا در صفحه لودینگ گیر نکند
         navigate("/dashboard", { replace: true });
       });
     }
@@ -160,13 +158,8 @@ export default function Test() {
     });
   };
 
-  // 👈 تابع جدید برای ثبت فرم مشخصات
-  // این تابع وقتی دکمه "شروع آزمون" زده میشه اجرا میشه
   const handleInfoSubmit = (e) => {
     e.preventDefault();
-
-    // منطق ثبت مشخصات کاربر
-
     if (!name.trim()) {
       if (userFullName) {
         setname(userFullName);
@@ -176,7 +169,6 @@ export default function Test() {
       STORAGE_KEY_INFO,
       JSON.stringify({ name: name || userFullName, sId: studentId }),
     );
-
     setIsInfoSubmitted(true);
   };
 
@@ -184,8 +176,16 @@ export default function Test() {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
+    // 👈 نمایش لودینگ هنگام ثبت نهایی
+    Swal.fire({
+      title: "درحال ثبت آزمون...",
+      html: "لطفا صبر کنید",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
     localStorage.removeItem(STORAGE_KEY_ANSWERS);
-    localStorage.removeItem(STORAGE_KEY_INFO); // پاک کردن اطلاعات موقت
+    localStorage.removeItem(STORAGE_KEY_INFO);
     localStorage.setItem(STORAGE_KEY_SUBMITTED, "true");
 
     let correctCount = 0;
@@ -205,14 +205,12 @@ export default function Test() {
 
     try {
       let finalStudentName = "کاربر ناشناس";
-
       if (name && name.trim().length > 0) {
         finalStudentName = name.trim();
       } else if (userFullName) {
         finalStudentName = userFullName;
       }
 
-      // 👈 ارسال نام و شماره دانشجویی به دیتابیس
       const { error: resultError } = await supabase.from("results").insert({
         test_id: id,
         eitaa_id: user.eitaa_id,
@@ -220,7 +218,6 @@ export default function Test() {
         correct_answers: correctCount,
         score_percentage: percentage,
         student_name: finalStudentName,
-
         student_id: studentId || null,
       });
       if (resultError) throw resultError;
@@ -232,9 +229,13 @@ export default function Test() {
 
       setScore({ correct: correctCount, total: totalQuestions, percentage });
       setStatus("finished");
+
+      // بستن لودینگ
+      Swal.close();
     } catch (error) {
       console.error("Error submitting:", error);
       setStatus("finished");
+      Swal.close();
     } finally {
       setIsSubmitting(false);
     }
@@ -264,6 +265,7 @@ export default function Test() {
               </p>
               <Button
                 className="mt-8 w-full text-2xl"
+                // 👈 دکمه بازگشت در اینجا هم باید به داشبورد برود
                 handleClick={() => navigate("/dashboard", { replace: true })}
               >
                 بازگشت به داشبورد
@@ -299,8 +301,7 @@ export default function Test() {
     );
   }
 
-  // 👈 ویوی جدید: فرم ورود مشخصات
-  // اگر آزمون فعال است اما کاربر هنوز فرم را پر نکرده
+  // فرم ورود مشخصات
   if (status === "active" && !isInfoSubmitted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-200 p-4">
