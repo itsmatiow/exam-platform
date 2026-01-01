@@ -160,10 +160,31 @@
 //     </>
 //   );
 // }
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import Picker from "react-mobile-picker";
 import jalaali from "jalaali-js";
 
-const months = [
+// --- توابع کمکی ---
+
+function toPersianNumber(n) {
+  const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+  return n
+    .toString()
+    .split("")
+    .map((d) => persianDigits[d])
+    .join("");
+}
+
+// تولید آرایه اعداد (با تبدیل به فارسی و پدینگ)
+const generateRange = (start, end) => {
+  if (start > end) return [];
+  return Array.from({ length: end - start + 1 }, (_, i) =>
+    toPersianNumber((i + start).toString().padStart(2, "0")),
+  );
+};
+
+// لیست ثابت ماه‌ها
+const allMonths = [
   "فروردین",
   "اردیبهشت",
   "خرداد",
@@ -178,165 +199,203 @@ const months = [
   "اسفند",
 ];
 
-const toFarsi = (num) => String(num).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+// تابع رندر آیتم‌ها (استایل)
+const renderItem = (option, selected, itemHeight) => (
+  <div
+    className={`flex items-center justify-center ${
+      selected
+        ? "rounded-lg bg-gray-100 px-6 font-bold text-cyan-700"
+        : "font-light text-gray-400"
+    }`}
+    style={{ height: `${itemHeight}px` }}
+  >
+    {option}
+  </div>
+);
 
-export default function DatePicker({ onChange }) {
-  // گرفتن زمان حال برای مقایسه
-  const now = new Date();
-  const jNow = jalaali.toJalaali(now); // تبدیل به شمسی: jy, jm, jd
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+export default function DateTimePicker({ onChange }) {
+  // --- دریافت زمان حال ---
+  // استفاده از state برای اینکه زمان حال ثابت بمونه و با هر رندر عوض نشه
+  const [nowDate] = useState(new Date());
+  const [jNow] = useState(jalaali.toJalaali(nowDate)); // { jy, jm, jd }
 
-  // استیت‌های انتخاب شده (پیش‌فرض: همین الان)
-  const [selectedMonth, setSelectedMonth] = useState(jNow.jm); // 1-12
-  const [selectedDay, setSelectedDay] = useState(jNow.jd);
-  const [selectedHour, setSelectedHour] = useState(currentHour);
-  const [selectedMinute, setSelectedMinute] = useState(currentMinute);
+  // --- State Initialization ---
+  // مقدار اولیه: همین الان
+  const [dateValue, setDateValue] = useState({
+    month: allMonths[jNow.jm - 1],
+    day: toPersianNumber(jNow.jd.toString().padStart(2, "0")),
+  });
 
-  // محاسبه تعداد روزهای ماه انتخاب شده
+  const [timeValue, setTimeValue] = useState({
+    hour: toPersianNumber(nowDate.getHours().toString().padStart(2, "0")),
+    minute: toPersianNumber(nowDate.getMinutes().toString().padStart(2, "0")),
+  });
+
+  const itemHeight = 40;
+  const totalHeight = itemHeight * 3;
+
+  // --- محاسبات دینامیک (هوشمند) ---
+
+  // 1. لیست ماه‌های مجاز (از ماه جاری تا آخر سال)
+  const availableMonths = useMemo(() => {
+    return allMonths.slice(jNow.jm - 1);
+  }, [jNow.jm]);
+
+  // 2. لیست روزهای مجاز
+  const currentMonthIndex = allMonths.indexOf(dateValue.month) + 1;
+  const isCurrentMonth = currentMonthIndex === jNow.jm;
+
   const daysInMonth =
-    selectedMonth <= 6
+    currentMonthIndex <= 6
       ? 31
-      : selectedMonth === 12 && !jalaali.isLeapJalaaliYear(jNow.jy)
+      : currentMonthIndex === 12 && !jalaali.isLeapJalaaliYear(jNow.jy)
         ? 29
         : 30;
 
-  // --- منطق فیلتر کردن زمان‌های گذشته ---
-
-  // ۱. تولید لیست روزها
-  // اگر ماهِ انتخاب شده همان ماهِ جاری باشد، روزها از "امروز" شروع می‌شوند، وگرنه از ۱
-  const startDay = selectedMonth === jNow.jm ? jNow.jd : 1;
-  const daysList = Array.from(
-    { length: daysInMonth - startDay + 1 },
-    (_, i) => startDay + i,
+  const startDay = isCurrentMonth ? jNow.jd : 1;
+  const availableDays = useMemo(
+    () => generateRange(startDay, daysInMonth),
+    [startDay, daysInMonth],
   );
 
-  // ۲. تولید لیست ساعت‌ها
-  // اگر "امروز" انتخاب شده باشد، ساعت از "ساعت الان" شروع می‌شود، وگرنه از ۰
-  const isToday = selectedMonth === jNow.jm && selectedDay === jNow.jd;
-  const startHour = isToday ? currentHour : 0;
-  const hoursList = Array.from(
-    { length: 24 - startHour },
-    (_, i) => startHour + i,
+  // 3. لیست ساعت‌های مجاز
+  const selectedDayNum = parseInt(toEng(dateValue.day));
+  const isToday = isCurrentMonth && selectedDayNum === jNow.jd;
+
+  const startHour = isToday ? nowDate.getHours() : 0;
+  const availableHours = useMemo(
+    () => generateRange(startHour, 23),
+    [startHour],
   );
 
-  // ۳. تولید لیست دقیقه‌ها
-  // اگر "همین ساعت" انتخاب شده باشد، دقیقه از "دقیقه الان" شروع می‌شود
-  const isNowHour = isToday && selectedHour === currentHour;
-  const startMinute = isNowHour ? currentMinute : 0;
-  // دقیقه‌ها رو ۵ تا ۵ تا نشون میدیم که تمیزتر باشه (اختیاری)
-  const minutesList = [];
-  for (let i = startMinute; i < 60; i += 5) {
-    minutesList.push(i);
-  }
-  // اگر لیست دقیقه‌ها خالی شد (مثلا ساعت ۵:۵۹ هست)، یه دونه 59 دستی اضافه کن
-  if (minutesList.length === 0) minutesList.push(59);
+  // 4. لیست دقیقه‌های مجاز
+  const selectedHourNum = parseInt(toEng(timeValue.hour));
+  const isNowHour = isToday && selectedHourNum === nowDate.getHours();
 
-  // --- ارسال تغییرات به کامپوننت پدر ---
+  const startMinute = isNowHour ? nowDate.getMinutes() : 0;
+  const availableMinutes = useMemo(
+    () => generateRange(startMinute, 59),
+    [startMinute],
+  );
+
+  // --- Effects: تصحیح خودکار انتخاب‌ها ---
+
+  // اگر کاربر ماه را عوض کرد و روزِ انتخاب شده در لیست جدید نبود، روز را اصلاح کن
   useEffect(() => {
-    // هر وقت استیت‌ها عوض شد، به پدر خبر بده
+    // چک میکنیم آیا روزی که الان انتخاب شده، توی لیست روزهای مجاز هست یا نه
+    const isDayValid = availableDays.includes(dateValue.day);
+    if (!isDayValid) {
+      // اگر معتبر نیست، اولین روز مجاز (مثلا امروز یا اول ماه) رو ست کن
+      setDateValue((prev) => ({ ...prev, day: availableDays[0] }));
+    }
+  }, [dateValue.month, availableDays, dateValue.day]);
+
+  // تصحیح ساعت (اگر روز عوض شد و ساعت شد گذشته)
+  useEffect(() => {
+    const isHourValid = availableHours.includes(timeValue.hour);
+    if (!isHourValid) {
+      setTimeValue((prev) => ({ ...prev, hour: availableHours[0] }));
+    }
+  }, [dateValue, availableHours, timeValue.hour]);
+
+  // تصحیح دقیقه (اگر ساعت عوض شد و دقیقه شد گذشته)
+  useEffect(() => {
+    const isMinuteValid = availableMinutes.includes(timeValue.minute);
+    if (!isMinuteValid) {
+      setTimeValue((prev) => ({ ...prev, minute: availableMinutes[0] }));
+    }
+  }, [timeValue.hour, availableMinutes, timeValue.minute]);
+
+  // --- ارسال تغییرات به والد ---
+  useEffect(() => {
     if (onChange) {
+      const curMonthIndex = allMonths.indexOf(dateValue.month) + 1;
       onChange({
-        date: {
-          day: selectedDay,
-          monthIndex: selectedMonth, // تبدیل به فرمت مورد نیاز پدر
-        },
-        time: {
-          hour: selectedHour,
-          minute: selectedMinute,
-        },
+        date: { ...dateValue, monthIndex: curMonthIndex },
+        time: timeValue,
       });
     }
-  }, [selectedMonth, selectedDay, selectedHour, selectedMinute]);
+  }, [dateValue, timeValue]);
 
-  // --- هندلرها (وقتی کاربر تغییر میده) ---
+  // --- آبجکتSelections برای پیکر ---
+  // این آبجکت رو میسازیم که بتونیم راحت مپ بزنیم روش
+  const selectionsDate = {
+    day: availableDays,
+    month: availableMonths,
+  };
 
-  // وقتی ماه عوض میشه، شاید روز انتخاب شده توی ماه جدید غیرمجاز باشه (مثلا روز ۳۱ام ماه قبل بودیم الان رفتیم ماهی که ۳۰ روزه)
-  // یا برگشتیم به ماه جاری و روز انتخاب شده مال قبله. باید ریست بشه.
-  const handleMonthChange = (e) => {
-    const newMonth = parseInt(e.target.value);
-    setSelectedMonth(newMonth);
-
-    // اگر رفتیم به ماه جاری، روز رو بذار روی امروز. اگر ماه دیگه بود بذار روز ۱
-    if (newMonth === jNow.jm) setSelectedDay(jNow.jd);
-    else setSelectedDay(1);
+  const selectionsTime = {
+    hour: availableHours,
+    minute: availableMinutes,
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-gray-300 bg-gray-50 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-500">
-          تاریخ و ساعت شروع:
-        </span>
-      </div>
+    <>
+      <div className="flex flex-col gap-2">
+        <label className="mt-2 text-lg font-semibold">روز شروع آزمون</label>
 
-      <div className="flex flex-wrap justify-center gap-2" dir="rtl">
-        {/* انتخاب روز */}
-        <select
-          value={selectedDay}
-          onChange={(e) => setSelectedDay(parseInt(e.target.value))}
-          className="rounded-lg border bg-white p-2 outline-none focus:border-cyan-500"
-        >
-          {daysList.map((d) => (
-            <option key={d} value={d}>
-              {toFarsi(d)}
-            </option>
-          ))}
-        </select>
-
-        {/* انتخاب ماه */}
-        <select
-          value={selectedMonth}
-          onChange={handleMonthChange}
-          className="rounded-lg border bg-white p-2 outline-none focus:border-cyan-500"
-        >
-          {months.map((m, index) => {
-            // فقط ماه‌های باقی‌مانده از سال رو نشون بده (اختیاری)
-            // اگر بخوای کاربر نتونه ماه قبل رو انتخاب کنه:
-            const monthIndex = index + 1;
-            if (monthIndex < jNow.jm) return null; // ماه‌های گذشته رو نشون نده
-
-            return (
-              <option key={index} value={monthIndex}>
-                {m}
-              </option>
-            );
-          })}
-        </select>
-
-        <span className="self-center text-gray-400">|</span>
-
-        {/* انتخاب ساعت */}
-        <div className="ltr flex items-center gap-1">
-          {/* دقیقه */}
-          <select
-            value={selectedMinute}
-            onChange={(e) => setSelectedMinute(parseInt(e.target.value))}
-            className="rounded-lg border bg-white p-2 outline-none focus:border-cyan-500"
-          >
-            {minutesList.map((m) => (
-              <option key={m} value={m}>
-                {toFarsi(m < 10 ? "0" + m : m)}
-              </option>
-            ))}
-          </select>
-
-          <span className="font-bold">:</span>
-
-          {/* ساعت */}
-          <select
-            value={selectedHour}
-            onChange={(e) => setSelectedHour(parseInt(e.target.value))}
-            className="rounded-lg border bg-white p-2 outline-none focus:border-cyan-500"
-          >
-            {hoursList.map((h) => (
-              <option key={h} value={h}>
-                {toFarsi(h < 10 ? "0" + h : h)}
-              </option>
-            ))}
-          </select>
+        {/* Date Section (RTL) */}
+        <div className="mt-2 flex flex-col gap-6" dir="rtl">
+          <div className="rounded-xl border-1 border-gray-300 bg-gray-50 px-4 py-2">
+            <Picker
+              value={dateValue}
+              onChange={setDateValue}
+              wheelMode="natural"
+              height={totalHeight}
+              itemHeight={itemHeight}
+            >
+              {/* ستون‌ها بر اساس لیست‌های دینامیک رندر می‌شوند */}
+              {["day", "month"].map((name) => (
+                <Picker.Column key={name} name={name}>
+                  {selectionsDate[name].map((option) => (
+                    <Picker.Item key={option} value={option}>
+                      {({ selected }) =>
+                        renderItem(option, selected, itemHeight)
+                      }
+                    </Picker.Item>
+                  ))}
+                </Picker.Column>
+              ))}
+            </Picker>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div className="mt-2 flex flex-col gap-2">
+        <label className="mt-2 text-lg font-semibold">ساعت شروع آزمون</label>
+
+        {/* Time Section (LTR) */}
+        <div className="mt-2 flex flex-col gap-6">
+          <div
+            className="rounded-xl border-1 border-gray-300 bg-gray-50 px-4 py-2"
+            dir="ltr"
+          >
+            <Picker
+              value={timeValue}
+              onChange={setTimeValue}
+              wheelMode="natural"
+              height={totalHeight}
+              itemHeight={itemHeight}
+            >
+              {["hour", "minute"].map((name) => (
+                <Picker.Column key={name} name={name}>
+                  {selectionsTime[name].map((option) => (
+                    <Picker.Item key={option} value={option}>
+                      {({ selected }) =>
+                        renderItem(option, selected, itemHeight)
+                      }
+                    </Picker.Item>
+                  ))}
+                </Picker.Column>
+              ))}
+            </Picker>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
+
+// تابع کمکی تبدیل به انگلیسی برای محاسبات داخلی
+const toEng = (str = "") =>
+  str.toString().replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
