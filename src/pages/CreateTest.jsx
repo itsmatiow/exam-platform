@@ -28,6 +28,7 @@ export default function CreateTest() {
     reviewable: false,
     questions: [],
   });
+  const BOT_TOKEN = import.meta.env.VITE_EITAA_BOT_TOKEN;
 
   // اطمینان از وجود حداقل یک سوال هنگام لود صفحه
   useEffect(() => {
@@ -100,6 +101,50 @@ export default function CreateTest() {
         q.id === id ? { ...q, [field]: value } : q,
       ),
     });
+  };
+
+  const sendConfirmationMessage = async (testId, testTitle) => {
+    try {
+      const botUsername = "asexam_app"; // نام کاربری ربات
+      const appName = "app";
+      // لینک مستقیم به آزمون
+      const link = `https://eitaa.com/${botUsername}/${appName}?startapp=${testId}`;
+
+      // متن پیام
+      const messageText = `
+✅ آزمون جدید با موفقیت ساخته شد!
+
+📝 عنوان: ${testTitle}
+⏳ مدت زمان: ${test.duration} دقیقه
+
+🔗 لینک شرکت در آزمون:
+${link}
+
+میتوانید این پیام را برای دانشجویان فوروارد کنید.
+      `.trim();
+
+      // ارسال درخواست به ایتایار
+      const response = await fetch("https://eitaayar.ir/api/app/sendMessage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: BOT_TOKEN,
+          chat_id: user.eitaa_id, // آیدی عددی کاربر که در AuthContext داریم
+          text: messageText,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("Eitaa Message Result:", result);
+
+      if (!result.ok) {
+        console.error("خطا در ارسال پیام ایتا:", result);
+      }
+    } catch (error) {
+      console.error("خطا در ارتباط با ایتایار:", error);
+    }
   };
 
   // --- Submission Handler (Logic with Swal) ---
@@ -227,7 +272,7 @@ export default function CreateTest() {
       const appName = "app"; // 👈 نام کوتاه اپ (معمولا app هست)
       const link = `https://eitaa.com/${botUsername}/${appName}?startapp=${savedTest.id}`;
       navigator.clipboard.writeText(link);
-
+      sendConfirmationMessage(savedTest.id, test.title);
       // 3. Success -> Show Success Modal -> Navigate
       await Swal.fire({
         title: "آزمون ساخته شد! 🎉",

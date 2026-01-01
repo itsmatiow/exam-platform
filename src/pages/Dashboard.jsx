@@ -5,6 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import Swal from "sweetalert2";
 import BackButton from "../components/BackButton";
 
+const toFarsi = (str) => {
+  // 👈 اصلاح مهم: عدد 0 نباید حذف شود
+  if (str === null || str === undefined) return "";
+  const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+  return str.toString().replace(/[0-9]/g, (d) => farsiDigits[parseInt(d)]);
+};
+
 const toEng = (str) =>
   String(str).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
 
@@ -348,7 +355,7 @@ export default function Dashboard() {
                   <div className="flex-1 rounded-xl border border-green-200 bg-green-100 py-2 text-center font-bold text-green-700">
                     نمره:{" "}
                     {test.score !== null && test.score !== undefined
-                      ? `٪${test.score}`
+                      ? `٪${toFarsi(test.score)}`
                       : "ثبت نشده"}{" "}
                   </div>
                 )}
