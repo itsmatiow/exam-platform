@@ -39,28 +39,20 @@ export default function CreateTest() {
   // --- Handlers ---
 
   const handleTime = ({ date, time }) => {
+    // تبدیل اعداد فارسی به انگلیسی برای محاسبه
     const pDay = parseInt(toEng(date.day));
     const pHour = parseInt(toEng(time.hour));
     const pMin = parseInt(toEng(time.minute));
-    const pMonth = date.monthIndex;
+    const pMonth = date.monthIndex; // ایندکس ماه (0 تا 11)
+
+    // گرفتن سال جاری شمسی
     const curYear = jalaali.toJalaali(new Date()).jy;
+
+    // تبدیل به میلادی برای ساخت آبجکت Date
     const { gy, gm, gd } = jalaali.toGregorian(curYear, pMonth, pDay);
     const finalDateStart = new Date(gy, gm - 1, gd, pHour, pMin);
 
     if (!isNaN(finalDateStart.getTime())) {
-      const now = new Date();
-
-      if (finalDateStart < new Date(now.getTime() - 60000)) {
-        Swal.fire({
-          icon: "warning",
-          title: "زمان نامعتبر",
-          text: "زمان شروع آزمون نمی‌تواند در گذشته باشد!",
-          confirmButtonText: "باشه",
-          timer: 3000,
-        });
-        return;
-      }
-
       const isoDateStart = finalDateStart.toISOString();
       setTest((prev) => ({
         ...prev,
