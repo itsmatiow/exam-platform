@@ -8,6 +8,18 @@ import BackButton from "../components/BackButton";
 const toEng = (str) =>
   String(str).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: "top",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.onmouseenter = Swal.stopTimer;
+    toast.onmouseleave = Swal.resumeTimer;
+  },
+});
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("created");
@@ -136,7 +148,6 @@ export default function Dashboard() {
     }
   };
 
-  // --- تابع حذف با SweetAlert و Supabase ---
   const deleteTest = (testId) => {
     Swal.fire({
       title: "آیا از حذف این آزمون مطمئن هستید؟",
@@ -299,7 +310,10 @@ export default function Dashboard() {
                     const link = `https://eitaa.com/${botUsername}/${appName}?startapp=${test.id}`;
 
                     navigator.clipboard.writeText(link);
-                    alert("لینک آزمون کپی شد!");
+                    Toast.fire({
+                      icon: "success",
+                      title: "لینک کپی شد",
+                    });
                   }}
                 >
                   <span className="block w-full truncate group-hover:invisible">

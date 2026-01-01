@@ -102,21 +102,67 @@ export default function CreateTest() {
     e.preventDefault();
 
     // 1. Validations
-    if (!test.title.trim()) return alert("لطفا نام آزمون را وارد کنید");
-    if (!test.duration || Number(test.duration) <= 0)
-      return alert("مدت زمان نامعتبر است");
-    if (!test.start) return alert("زمان شروع را انتخاب کنید");
-    if (test.questions.length === 0) return alert("حداقل یک سوال اضافه کنید");
+    if (!test.title.trim()) {
+      return Swal.fire({
+        icon: "warning",
+        title: "توجه",
+        text: "عنوان آزمون الزامی است",
+        confirmButtonText: "تایید",
+      });
+    }
+    if (!test.duration || Number(test.duration) <= 0) {
+      return Swal.fire({
+        icon: "warning",
+        title: "توجه",
+        text: "مدت زمان نامعتبر است",
+        confirmButtonText: "تایید",
+      });
+    }
+    if (!test.start) {
+      return Swal.fire({
+        icon: "warning",
+        title: "توجه",
+        text: "لطفا زمان شروع را انتخاب کنید",
+        confirmButtonText: "تایید",
+      });
+    }
+    if (test.questions.length === 0) {
+      return Swal.fire({
+        icon: "warning",
+        title: "توجه",
+        text: "حداقل یک سوال اضافه کنید",
+        confirmButtonText: "تایید",
+      });
+    }
 
     for (let i = 0; i < test.questions.length; i++) {
       const q = test.questions[i];
-      if (!q.text.trim()) return alert(`متن سوال ${i + 1} خالی است`);
-      for (let j = 0; j < q.options.length; j++) {
-        if (!q.options[j].text.trim())
-          return alert(`گزینه ${j + 1} در سوال ${i + 1} خالی است`);
+      if (!q.text.trim()) {
+        return Swal.fire({
+          icon: "warning",
+          title: "سوال ناقص",
+          text: `متن سوال شماره ${i + 1} خالی است`,
+          confirmButtonText: "تایید",
+        });
       }
-      if (!q.correctAnswer)
-        return alert(`گزینه صحیح سوال ${i + 1} را مشخص کنید`);
+      for (let j = 0; j < q.options.length; j++) {
+        if (!q.options[j].text.trim()) {
+          return Swal.fire({
+            icon: "warning",
+            title: "گزینه ناقص",
+            text: `گزینه ${j + 1} در سوال ${i + 1} خالی است`,
+            confirmButtonText: "تایید",
+          });
+        }
+      }
+      if (!q.correctAnswer) {
+        return Swal.fire({
+          icon: "warning",
+          title: "پاسخ صحیح را انتخاب کنید",
+          text: `لطفا گزینه صحیح سوال ${i + 1} را مشخص کنید`,
+          confirmButtonText: "تایید",
+        });
+      }
     }
 
     // 2. Start Loading
@@ -197,7 +243,7 @@ export default function CreateTest() {
         text: error.message || "مشکلی پیش آمده است",
         icon: "error",
         draggable: true,
-        confirmButtonText: "باشه",
+        confirmButtonText: "تایید",
       });
 
       setIsSubmitting(false); // فعال کردن دوباره دکمه در صورت خطا

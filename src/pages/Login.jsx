@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import Swal from "sweetalert2";
 
 /* --- توابع کمکی --- */
 const toEng = (str = "") =>
@@ -32,6 +33,12 @@ export default function Home() {
   // --- منطق دریافت و ذخیره شماره ---
   const savePhoneNumber = async (rawData) => {
     setSaving(true);
+    Swal.fire({
+      title: "درحال بررسی هویت...",
+      html: "لطفا کمی صبر کنید",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
     try {
       const phone =
         rawData?.responseUnsafe?.contact?.phone ||
@@ -70,11 +77,23 @@ export default function Home() {
         if (error) throw error;
         finalUser = data;
       }
+      await Swal.fire({
+        icon: "success",
+        title: "خوش آمدید!",
+        text: "ورود با موفقیت انجام شد.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
       setUser(finalUser);
       // نکته: با تغییر setUser، اون useEffect بالا خودکار اجرا میشه و میبره به لندینگ
     } catch (err) {
-      alert("خطا: " + err.message);
+      Swal.fire({
+        icon: "error",
+        title: "خطا",
+        text: err.message,
+        confirmButtonText: "باشه",
+      });
     } finally {
       setSaving(false);
     }
@@ -84,7 +103,17 @@ export default function Home() {
     const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
     if (app?.requestContact) {
       app.requestContact((shared, data) => {
-        if (shared) savePhoneNumber(data);
+        if (shared) {
+          savePhoneNumber(data);
+        } else {
+          setSaving(false);
+          Swal.fire({
+            icon: "warning",
+            title: "توجه",
+            text: "برای ورود به برنامه، اشتراک‌گذاری شماره الزامی است.",
+            confirmButtonText: "متوجه شدم",
+          });
+        }
       });
     } else {
       // فال‌بک برای وب‌ویو مستقیم

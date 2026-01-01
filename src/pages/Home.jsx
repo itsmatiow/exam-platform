@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import Swal from "sweetalert2"; // 👈 ایمپورت سوییت الرت
 
 /* --- توابع کمکی --- */
 const toEng = (str = "") =>
@@ -21,18 +22,17 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, setUser, loading } = useAuth();
   const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  // ❌ استیت errorMsg حذف شد چون دیگه با آلرت نشون میدیم
 
   const [targetTestId, setTargetTestId] = useState(null);
 
   useEffect(() => {
-    // ۱. بررسی کنیم آیا با لینک مستقیم (Deep Link) وارد شده؟
     const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
     const startParam = app?.initDataUnsafe?.start_param;
 
     if (startParam) {
       console.log("ورود با لینک آزمون:", startParam);
-      setTargetTestId(startParam); // آیدی رو نگه دار
+      setTargetTestId(startParam);
     }
   }, []);
 
@@ -50,7 +50,15 @@ export default function Home() {
   //save phone number to supabase
   const savePhoneNumber = async (rawData) => {
     setSaving(true);
-    setErrorMsg("");
+
+    // 👈 نمایش لودینگ
+    Swal.fire({
+      title: "درحال بررسی هویت...",
+      html: "لطفا کمی صبر کنید",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
     try {
       const phone =
         rawData?.responseUnsafe?.contact?.phone ||
@@ -110,16 +118,30 @@ export default function Home() {
         finalUser = data;
       }
 
+      // 👈 نمایش پیام موفقیت قبل از انتقال
+      await Swal.fire({
+        icon: "success",
+        title: "خوش آمدید! 👋",
+        text: "اطلاعات شما تایید شد. در حال انتقال...",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
       setUser(finalUser);
     } catch (err) {
-      setErrorMsg("خطا در ذخیره اطلاعات: " + err.message);
+      // 👈 نمایش خطا با Swal
+      Swal.fire({
+        icon: "error",
+        title: "خطا",
+        text: "خطا در ذخیره اطلاعات: " + err.message,
+        confirmButtonText: "باشه",
+      });
     } finally {
       setSaving(false);
     }
   };
 
   const handleShareClick = () => {
-    setErrorMsg("");
     const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
 
     if (app?.requestContact) {
@@ -128,9 +150,13 @@ export default function Home() {
           savePhoneNumber(data);
         } else {
           setSaving(false);
-          setErrorMsg(
-            "برای ادامه کار با ربات، اشتراک‌گذاری شماره الزامی است ⚠️",
-          );
+          // 👈 هشدار در صورت لغو اشتراک‌گذاری
+          Swal.fire({
+            icon: "warning",
+            title: "توجه",
+            text: "برای ادامه کار با ربات، اشتراک‌گذاری شماره الزامی است ⚠️",
+            confirmButtonText: "متوجه شدم",
+          });
         }
       });
     } else {
@@ -165,12 +191,6 @@ export default function Home() {
           به شماره همراهتون نیاز داریم. <br />
           لطفا با ما به اشتراک بذارید...
         </p>
-
-        {errorMsg && (
-          <div className="mb-4 animate-pulse rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-600">
-            {errorMsg}
-          </div>
-        )}
 
         <button
           onClick={handleShareClick}

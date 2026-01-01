@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import Button from "../ui/Button";
 
 // --- Utility Functions ---
@@ -115,7 +116,16 @@ export default function Test() {
       checkTimeStatus(data);
     } catch (error) {
       console.error("Error:", error);
-      alert("آزمون پیدا نشد!");
+      Swal.fire({
+        icon: "error",
+        title: "خطا",
+        text: "آزمون پیدا نشد یا حذف شده است!",
+        confirmButtonText: "بازگشت به داشبورد",
+        allowOutsideClick: false,
+      }).then(() => {
+        // هدایت کاربر به داشبورد تا در صفحه لودینگ گیر نکند
+        navigate("/dashboard", { replace: true });
+      });
     }
   };
 
@@ -166,40 +176,8 @@ export default function Test() {
       STORAGE_KEY_INFO,
       JSON.stringify({ name: name || userFullName, sId: studentId }),
     );
+
     setIsInfoSubmitted(true);
-
-    // ۱. حذف فاصله‌های اضافی از اسمی که کاربر نوشته
-    // let name;
-
-    // // ۲. اگر کاربر چیزی ننوشته بود (رشته خالی بود)
-    // if (!name) {
-    //   if (user) {
-    //     // ساخت اسم از اطلاعات اکانت ایتا
-    //     const fname = user.first_name || "";
-    //     const lname = user.last_name || "";
-
-    //     // ترکیب اسم و فامیل
-    //     const eitaaName = `${fname} ${lname}`.trim();
-
-    //     // اگر اسم داشت که هیچی، اگر نداشت (خیلی بعیده) آیدی عددی رو بذار
-    //     name = eitaaName || `کاربر ${user.eitaa_id}`;
-    //   } else {
-    //     // اگر کلا یوزر لود نشده بود (مثلا اینترنت قطعه یا تو مرورگری)
-    //     name = "کاربر ناشناس";
-    //   }
-    // }
-
-    // // ۳. ذخیره اسم نهایی (چه دستی، چه از ایتا)
-    // setname(name);
-
-    // // ذخیره موقت در حافظه گوشی (که اگه رفرش شد نپره)
-    // localStorage.setItem(
-    //   STORAGE_KEY_INFO,
-    //   JSON.stringify({ name: name, sId: studentId }),
-    // );
-
-    // // ۴. فرم بسته شه و سوالات بیاد
-    // setIsInfoSubmitted(true);
   };
 
   const submitExam = async () => {
@@ -242,10 +220,6 @@ export default function Test() {
         correct_answers: correctCount,
         score_percentage: percentage,
         student_name: finalStudentName,
-        // name ||
-        // (user?.first_name
-        //   ? `${user.first_name} ${user.last_name || ""}`
-        //   : "کاربر ناشناس"),
 
         student_id: studentId || null,
       });
