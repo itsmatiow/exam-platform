@@ -293,17 +293,9 @@ export default function Dashboard() {
                 {/* Copy Link Button */}
                 <Button
                   className="group relative flex-1 overflow-hidden !py-2 text-base !font-bold"
-                  // handleClick={() => {
-                  //   const link = `${window.location.origin}/test/${test.id}`;
-                  //   navigator.clipboard.writeText(link);
-                  //   alert("لینک آزمون کپی شد!");
-                  // }}
-                  // ... (داخل دکمه کپی لینک)
                   handleClick={() => {
-                    const botUsername = "MyExamBot"; // 👈 نام ربات
-                    const appName = "app";
-
-                    // ساخت لینک با پارامتر startapp
+                    const botUsername = "asexam_app"; // 👈 نام کاربری ربات خودت (بدون @)
+                    const appName = "app"; // 👈 نام کوتاه اپ (معمولا app هست)
                     const link = `https://eitaa.com/${botUsername}/${appName}?startapp=${test.id}`;
 
                     navigator.clipboard.writeText(link);
@@ -324,7 +316,6 @@ export default function Dashboard() {
                     handleClick={() => showResults(test.id, test.title)}
                   >
                     📊 نتایج ({test.participant_count || "مشاهده"})
-                    {/* نکته: برای تعداد شرکت کنندگان دقیق باید کوری جدا زد یا همینجوری گذاشت */}
                   </Button>
                 )}
 

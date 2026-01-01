@@ -31,7 +31,7 @@ export default function Test() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 👈 استیت‌های جدید برای فرم ورود
-  const [studentName, setStudentName] = useState("");
+  const [name, setname] = useState("");
   const [studentId, setStudentId] = useState("");
   const [isInfoSubmitted, setIsInfoSubmitted] = useState(false); // آیا فرم پر شده؟
 
@@ -42,6 +42,10 @@ export default function Test() {
   const STORAGE_KEY_ANSWERS = `test_answers_${id}`;
   const STORAGE_KEY_SUBMITTED = `test_submitted_${id}`;
   const STORAGE_KEY_INFO = `test_info_${id}`; // ذخیره موقت مشخصات
+
+  const userFullName = user
+    ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+    : "";
 
   // --- Effects ---
 
@@ -58,7 +62,7 @@ export default function Test() {
         const savedInfo = localStorage.getItem(STORAGE_KEY_INFO);
         if (savedInfo) {
           const { name, sId } = JSON.parse(savedInfo);
-          setStudentName(name);
+          setname(name);
           setStudentId(sId);
           setIsInfoSubmitted(true);
         }
@@ -151,38 +155,51 @@ export default function Test() {
   const handleInfoSubmit = (e) => {
     e.preventDefault();
 
-    // ۱. حذف فاصله‌های اضافی از اسمی که کاربر نوشته
-    let finalName = studentName.trim();
+    // منطق ثبت مشخصات کاربر
 
-    // ۲. اگر کاربر چیزی ننوشته بود (رشته خالی بود)
-    if (!finalName) {
-      if (user) {
-        // ساخت اسم از اطلاعات اکانت ایتا
-        const fname = user.first_name || "";
-        const lname = user.last_name || "";
-
-        // ترکیب اسم و فامیل
-        const eitaaName = `${fname} ${lname}`.trim();
-
-        // اگر اسم داشت که هیچی، اگر نداشت (خیلی بعیده) آیدی عددی رو بذار
-        finalName = eitaaName || `کاربر ${user.eitaa_id}`;
-      } else {
-        // اگر کلا یوزر لود نشده بود (مثلا اینترنت قطعه یا تو مرورگری)
-        finalName = "کاربر ناشناس";
+    if (!name.trim()) {
+      if (userFullName) {
+        setname(userFullName);
       }
     }
-
-    // ۳. ذخیره اسم نهایی (چه دستی، چه از ایتا)
-    setStudentName(finalName);
-
-    // ذخیره موقت در حافظه گوشی (که اگه رفرش شد نپره)
     localStorage.setItem(
       STORAGE_KEY_INFO,
-      JSON.stringify({ name: finalName, sId: studentId }),
+      JSON.stringify({ name: name || userFullName, sId: studentId }),
     );
-
-    // ۴. فرم بسته شه و سوالات بیاد
     setIsInfoSubmitted(true);
+
+    // ۱. حذف فاصله‌های اضافی از اسمی که کاربر نوشته
+    // let name;
+
+    // // ۲. اگر کاربر چیزی ننوشته بود (رشته خالی بود)
+    // if (!name) {
+    //   if (user) {
+    //     // ساخت اسم از اطلاعات اکانت ایتا
+    //     const fname = user.first_name || "";
+    //     const lname = user.last_name || "";
+
+    //     // ترکیب اسم و فامیل
+    //     const eitaaName = `${fname} ${lname}`.trim();
+
+    //     // اگر اسم داشت که هیچی، اگر نداشت (خیلی بعیده) آیدی عددی رو بذار
+    //     name = eitaaName || `کاربر ${user.eitaa_id}`;
+    //   } else {
+    //     // اگر کلا یوزر لود نشده بود (مثلا اینترنت قطعه یا تو مرورگری)
+    //     name = "کاربر ناشناس";
+    //   }
+    // }
+
+    // // ۳. ذخیره اسم نهایی (چه دستی، چه از ایتا)
+    // setname(name);
+
+    // // ذخیره موقت در حافظه گوشی (که اگه رفرش شد نپره)
+    // localStorage.setItem(
+    //   STORAGE_KEY_INFO,
+    //   JSON.stringify({ name: name, sId: studentId }),
+    // );
+
+    // // ۴. فرم بسته شه و سوالات بیاد
+    // setIsInfoSubmitted(true);
   };
 
   const submitExam = async () => {
@@ -209,6 +226,14 @@ export default function Test() {
     const percentage = (correctCount / totalQuestions) * 100;
 
     try {
+      let finalStudentName = "کاربر ناشناس";
+
+      if (name && name.trim().length > 0) {
+        finalStudentName = name.trim();
+      } else if (userFullName) {
+        finalStudentName = userFullName;
+      }
+
       // 👈 ارسال نام و شماره دانشجویی به دیتابیس
       const { error: resultError } = await supabase.from("results").insert({
         test_id: id,
@@ -216,11 +241,12 @@ export default function Test() {
         total_questions: totalQuestions,
         correct_answers: correctCount,
         score_percentage: percentage,
-        student_name:
-          studentName ||
-          (user?.first_name
-            ? `${user.first_name} ${user.last_name || ""}`
-            : "کاربر ناشناس"),
+        student_name: finalStudentName,
+        // name ||
+        // (user?.first_name
+        //   ? `${user.first_name} ${user.last_name || ""}`
+        //   : "کاربر ناشناس"),
+
         student_id: studentId || null,
       });
       if (resultError) throw resultError;
@@ -319,12 +345,12 @@ export default function Test() {
               </label>
               <input
                 type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
+                value={name}
+                onChange={(e) => setname(e.target.value)}
                 placeholder={
-                  user?.first_name
-                    ? `${user.first_name} (پیش‌فرض)`
-                    : "مثال: علی رضایی"
+                  userFullName
+                    ? `${userFullName} (پیشفرض)`
+                    : "نام خود را وارد کنید"
                 }
                 className="w-full rounded-xl border bg-gray-50 p-3 transition-colors outline-none focus:border-cyan-500"
               />
@@ -348,7 +374,9 @@ export default function Test() {
               ⚠️ در صورت خالی گذاشتن نام، از نام کاربری ایتا استفاده خواهد شد.
             </div>
 
-            <Button className="mt-2 w-full py-3 text-lg">شروع آزمون</Button>
+            <Button type="submit" className="mt-2 w-full py-3 text-lg">
+              شروع آزمون
+            </Button>
           </form>
         </div>
       </div>

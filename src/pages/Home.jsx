@@ -60,7 +60,13 @@ export default function Home() {
       if (!phone) throw new Error("شماره یافت نشد");
 
       const finalPhone = normalizePhone(phone);
-      const eitaaId = rawData?.user?.id || user?.eitaa_id;
+
+      const app = window.Eitaa?.WebApp || window.Telegram?.WebApp;
+      const eitaaUser = app?.initDataUnsafe?.user || rawData?.user;
+      const eitaaId = eitaaUser?.id || user?.eitaa_id;
+
+      const firstName = eitaaUser?.first_name || "";
+      const lastName = eitaaUser?.last_name || "";
 
       //search in database
       const { data: existing } = await supabase
@@ -70,11 +76,18 @@ export default function Home() {
         .maybeSingle();
 
       let finalUser = null;
+
       if (existing) {
+        const updates = {
+          eitaa_id: eitaaId,
+          first_name: existing.first_name || firstName,
+          last_name: existing.last_name || lastName,
+        };
+
         //update eitaa id if missing or changed
         const { data, error } = await supabase
           .from("profiles")
-          .update({ eitaa_id: eitaaId })
+          .update(updates)
           .eq("phone_number", finalPhone)
           .select()
           .single();
@@ -84,7 +97,13 @@ export default function Home() {
         // sign up new user
         const { data, error } = await supabase
           .from("profiles")
-          .insert({ phone_number: finalPhone, eitaa_id: eitaaId, role: "user" })
+          .insert({
+            phone_number: finalPhone,
+            eitaa_id: eitaaId,
+            first_name: firstName,
+            last_name: lastName,
+            role: "user",
+          })
           .select()
           .single();
         if (error) throw error;
