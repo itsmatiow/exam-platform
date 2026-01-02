@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import Swal from "sweetalert2";
 import BackButton from "../components/BackButton";
+import { useNavigate } from "react-router-dom";
 
 const toFarsi = (str) => {
   // 👈 اصلاح مهم: عدد 0 نباید حذف شود
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("created");
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // --- Fetching Logic (Same as before) ---
   const fetchCreatedTests = async () => {
@@ -266,7 +268,7 @@ export default function Dashboard() {
       {/* Floating Action Button (Only show if creating tests makes sense for user role, purely optional adjustment) */}
       <div className="fixed bottom-6 left-6 z-50">
         <Button
-          handleClick={() => (window.location.href = "/create")}
+          handleClick={() => navigate("/create")}
           className="flex h-14 w-14 items-center justify-center !rounded-full bg-cyan-600 !p-0 text-2xl shadow-xl transition-colors hover:bg-cyan-700"
         >
           +
