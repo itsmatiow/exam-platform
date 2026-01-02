@@ -24,7 +24,7 @@ export default function Landing() {
         </div>
       </div>
       <h2 className="mx-auto mb-12 flex text-center select-none">
-        طراحی شده با چای
+        طراحی شده توسط مَت با چای
         <img
           className="mx-1 h-6 w-6"
           alt="tea"
