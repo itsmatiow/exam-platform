@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    /*
     const initAuth = async () => {
       try {
         let eitaaId = null;
@@ -37,6 +38,17 @@ export function AuthProvider({ children }) {
     };
 
     initAuth();
+    */
+
+    // کاربر موقت برای نسخه دمو
+    setUser({
+      eitaa_id: "demo-user",
+      name: "Demo User",
+      phone_number: "0000000000",
+      isNew: false,
+    });
+
+    setLoading(false);
   }, []);
 
   const checkUserInDb = async (id, defaultName) => {
