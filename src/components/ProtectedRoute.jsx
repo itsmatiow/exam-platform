@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-
+  /*
   // ۱. صبر برای لود شدن
   if (loading) {
     return <div className="p-10 text-center">درحال بارگذاری...</div>;
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children }) {
   if (!user || !user.phone_number) {
     return <Navigate to="/login" replace />;
   }
-
-  // ۳. بفرما تو
+*/
+  // ۳.فعلا به صورت تستی دسترسی آزاد است.
   return children;
 }
