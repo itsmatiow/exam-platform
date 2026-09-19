@@ -1,16 +1,64 @@
-# React + Vite
+# Exam Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web-based exam platform built with React, Vite, and Supabase.
 
-Currently, two official plugins are available:
+The platform allows users to create and manage exams, take exams with a timed experience, and view calculated results. The entire frontend and application logic were designed and developed from scratch.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+* Create and manage exams
+* Manage users and user information
+* Take timed exams
+* Automatic exam timing and minute calculation
+* Automatic score and result calculation
+* View exam results
+* Exam and question management
+* User-specific data handling
+* Responsive interface
+* Supabase integration for data storage and authentication
+* Client-side routing with React Router
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+* React
+* JavaScript
+* Vite
+* Tailwind CSS
+* React Router
+* Supabase
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Live Demo
+
+[View the live website](https://exam-platform-gold.vercel.app/)
+
+## My Role
+
+I designed and developed the entire project independently.
+
+This includes the frontend implementation, user flows, exam management, question handling, user management, timed exam logic, result calculation, result presentation, responsive layouts, and integration with Supabase.
+
+## Getting Started
+
+Clone the repository and install the dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at the local development URL provided by Vite.
+
+## Backend
+
+The project uses **Supabase** as its backend service and database layer.
+
+The application's data management and database operations are integrated directly with Supabase rather than relying on a separate custom backend server.
+
+## Project Status
+
+This project is deployed and available as a live web application.
